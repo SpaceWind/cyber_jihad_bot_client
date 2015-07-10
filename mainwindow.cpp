@@ -149,6 +149,7 @@ void MainWindow::joinPartyResponse(joinPartyResult result)
         myParty.owner = result.isOwner;
         myParty.members.clear();
         ui->party_user_list->clear();
+        ui->attack_box->setEnabled(myParty.owner);
         for (QList<joinPartyResult::partyMember>::iterator it = result.members.begin(); it != result.members.end(); ++it)
         {
             myParty.members.append((*it).login);
