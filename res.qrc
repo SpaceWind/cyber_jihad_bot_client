@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>create.png</file>
+        <file>join.png</file>
+        <file>leave.png</file>
+        <file>save.png</file>
+        <file>attack.png</file>
+        <file>Stop.png</file>
+        <file>add.png</file>
+        <file>new.png</file>
+        <file>delete.ico</file>
+    </qresource>
+</RCC>
