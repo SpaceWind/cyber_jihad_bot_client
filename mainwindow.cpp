@@ -473,3 +473,17 @@ void MainWindow::on_party_status_returnPressed()
     QString status = (ui->ready_checkbox->isChecked() ? "::READY::" : "") + ui->party_status->text();
     ps->changeStatus(apikey,myParty.name,status);
 }
+
+void MainWindow::on_save_params_button_clicked()
+{
+
+}
+
+void MainWindow::on_lineEdit_3_returnPressed()
+{
+    partyService * ps = psa->get();
+    ps->sendMessage(apikey,myParty.name,ui->lineEdit_3->text());
+    QString html = ui->party_chat->toHtml();
+    html += "<p>"+ login + ": " + ui->lineEdit_3->text() + "</p>";
+    ui->party_chat->setHtml(html);
+}

@@ -63,6 +63,10 @@ private slots:
 
     void on_party_status_returnPressed();
 
+    void on_save_params_button_clicked();
+
+    void on_lineEdit_3_returnPressed();
+
 private:
     Ui::MainWindow *ui;
     QList<QString> allAccounts_;
