@@ -5,8 +5,10 @@
 #include <QTimer>
 #include <QHash>
 #include <QList>
+#include <QListWidgetItem>
 #include "partyservice.h"
 #include "twostringinputdialog.h"
+#include "spamsystem.h"
 namespace Ui {
 class MainWindow;
 }
@@ -44,35 +46,42 @@ public slots:
     void joinPartyResponse(joinPartyResult result);
     void leavePartyResponse(nonQueryResult result);
     void updatePartyResponse(partyUpdatesResult result);
+    void savePartyParamsResponse(nonQueryResult result);
 
 
     void loadUpdates();
-
+    void startAttack();
 private slots:
+    void connectingState(int max);
+    void readingState(int max);
+    void spammingState(int max);
+    void wordAdded(QString word);
+    void messageSent(int current);
+    void socketConnected(int current);
+    void messageRead(int current);
+
+
+
+
     void on_pushButton_11_clicked();
-
     void on_pushButton_12_clicked();
-
     void on_create_party_button_clicked();
-
     void on_join_party_button_clicked();
-
     void on_leave_party_button_clicked();
-
     void on_ready_checkbox_clicked(bool checked);
-
     void on_party_status_returnPressed();
-
     void on_save_params_button_clicked();
-
     void on_lineEdit_3_returnPressed();
+    void on_accounts_list_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+    void on_start_attack_button_clicked();
+    void on_stop_attack_button_clicked();
 
 private:
     Ui::MainWindow *ui;
-    QList<QString> allAccounts_;
+    QStringList allAccounts_;
     QList<getAccountsResult::spamAccountDescriptor> myAccounts_;
     QList<getBannedResult::spamAccountBan> banned_;
-    QList<QString> words_;
+    QStringList words_;
     QString spamMode_;
 
     partyServiceAllocator * psa;
@@ -81,6 +90,7 @@ private:
     partyDescriptor myParty;
 
     QTimer partyUpdateTimer;
+    SpamSystem * spamSystem;
 
 };
 

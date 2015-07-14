@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
@@ -205,7 +208,7 @@ QTabBar::tab:hover {
                  <number>5</number>
                 </property>
                 <property name="value">
-                 <number>20</number>
+                 <number>10</number>
                 </property>
                </widget>
               </item>
@@ -328,7 +331,7 @@ QTabBar::tab:hover {
               <number>50</number>
              </property>
              <property name="value">
-              <number>200</number>
+              <number>2000</number>
              </property>
             </widget>
            </item>
@@ -442,6 +445,9 @@ QTabBar::tab:hover {
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="2" column="0" colspan="4">
             <widget class="QTextEdit" name="party_chat">
+             <property name="horizontalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOff</enum>
+             </property>
              <property name="documentTitle">
               <string/>
              </property>
@@ -548,8 +554,11 @@ QTabBar::tab:hover {
              </property>
              <property name="font">
               <font>
-               <pointsize>16</pointsize>
+               <pointsize>12</pointsize>
               </font>
+             </property>
+             <property name="autoScrollMargin">
+              <number>12</number>
              </property>
             </widget>
            </item>
@@ -623,7 +632,7 @@ QTabBar::tab:hover {
              </property>
              <property name="icon">
               <iconset resource="res.qrc">
-               <normaloff>:/delete.ico</normaloff>:/delete.ico</iconset>
+               <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -755,7 +764,7 @@ QTabBar::tab:hover {
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="res.qrc">
+              <iconset>
                <normaloff>:/delete.ico</normaloff>:/delete.ico</iconset>
              </property>
              <property name="iconSize">
@@ -801,17 +810,6 @@ QTabBar::tab:hover {
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1025</width>
-     <height>21</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>

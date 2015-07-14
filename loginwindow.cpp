@@ -7,7 +7,7 @@ loginWindow::loginWindow(QWidget *parent) :
     ui(new Ui::loginWindow)
 {
     ui->setupUi(this);
-    psa = new partyServiceAllocator("https://cyberjihad-bot.herokuapp.com",2);
+    psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",2);
 }
 
 loginWindow::~loginWindow()

@@ -628,7 +628,7 @@ void RemoteServer::call(QString method, QHash<QString, QString> params)
     url.setQuery(query);
 
     QNetworkRequest request(url);
-    request.setSslConfiguration(QSslConfiguration::defaultConfiguration());
+ //   request.setSslConfiguration(QSslConfiguration::defaultConfiguration());
 
 
 

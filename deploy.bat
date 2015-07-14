@@ -1,0 +1,1 @@
+copy ..\build-ircSpamBotCoop-Desktop_Qt_5_4_0_MinGW_32bit-Release\release\*.exe release\*.*

@@ -8,6 +8,6 @@
         <file>Stop.png</file>
         <file>add.png</file>
         <file>new.png</file>
-        <file>delete.ico</file>
+        <file>delete.png</file>
     </qresource>
 </RCC>

@@ -19,6 +19,11 @@ public:
     QString getValue2();
     ~twoStringInputDialog();
 
+private slots:
+    void on_OkButton_clicked();
+
+    void on_CancelButton_clicked();
+
 private:
     Ui::twoStringInputDialog *ui;
 };

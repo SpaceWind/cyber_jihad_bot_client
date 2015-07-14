@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    psa = new partyServiceAllocator("https://cyberjihad-bot.herokuapp.com",5);
+    psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",10);
 }
 
 void MainWindow::setup()
@@ -15,6 +15,7 @@ void MainWindow::setup()
         ui->create_party_button->setEnabled(true);
     loadAccounts();
     connect(&partyUpdateTimer,SIGNAL(timeout()),this,SLOT(loadUpdates()));
+    spamSystem = 0;
 }
 
 void MainWindow::loadAccounts()
@@ -50,6 +51,7 @@ void MainWindow::loadAccountsResponse(getAccountsResult result)
     ui->status_label->setText("OK");
     myAccounts_.clear();
     allAccounts_.clear();
+    ui->accounts_list->clear();
     for (QList<getAccountsResult::spamAccountDescriptor>::iterator it = result.accounts.begin(); it != result.accounts.end(); ++it)
     {
         if ((*it).owner == login)
@@ -85,7 +87,8 @@ void MainWindow::removeAccountResponse(nonQueryResult result)
 {
     if (srv.contains("removeAccount"))
         disconnect(srv["removeAccount"],SIGNAL(removeAccountResponse(nonQueryResult)),this,SLOT(removeAccountResponse(nonQueryResult)));
-    ui->pushButton_12->setEnabled(true);
+    if (ui->accounts_list->count())
+        ui->pushButton_12->setEnabled(true);
     ui->accounts_list->setEnabled(true);
     if (result.error)
     {
@@ -228,6 +231,7 @@ void MainWindow::leavePartyResponse(nonQueryResult result)
     ui->party_user_list->clear();
     ui->ready_checkbox->setChecked(false);
     partyUpdateTimer.stop();
+    myParty.enabled = false;
     if (result.error)
     {
         ui->status_label->setText("CONNECTION UNAVAILABLE");
@@ -301,9 +305,9 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
                         status = pu.user_status.replace("::READY::","").replace("::NOTREADY::","");
                         ui->party_user_list->item(i)->setText(memberTokens.first() + ":[" + status + "]");
                         if (ready)
-                            ui->party_user_list->item(i)->setBackgroundColor(QColor::fromRgb(20,220,20));
+                            ui->party_user_list->item(i)->setBackgroundColor(QColor::fromRgb(20,230,20));
                         else
-                            ui->party_user_list->item(i)->setBackgroundColor(QColor::fromRgb(128,128,128,128));
+                            ui->party_user_list->item(i)->setBackgroundColor(QColor::fromRgb(150,150,150,128));
                         break;
                     }
                 }
@@ -312,11 +316,12 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
             {
                 QStringList serverTokens = pu.server.split(":");
                 ui->chat_server->setText(serverTokens.at(0));
+                ui->chat_cd->setValue(pu.cd);
                 ui->server_port->setText(serverTokens.at(1));
                 ui->tolower_checkbox->setChecked(pu.caps != "true");
                 ui->chat_channel->setText(pu.channel);
                 ui->emotes_cap->setValue(pu.max_emotes);
-                ui->emotes_cap_checkbox->setChecked(pu.max_emotes == -1);
+                ui->emotes_cap_checkbox->setChecked(pu.max_emotes != -1);
                 if (pu.method == "adaptive" || pu.method == "both")
                 {
                     ui->min_words->setValue(pu.word_count_min);
@@ -324,40 +329,73 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
                     ui->read_before->setValue(pu.before_attack);
                     if(pu.method == "adaptive")
                     {
-                        ui->adaptive_method_box->setEnabled(true);
-                        ui->list_method_box->setEnabled(false);
+                        ui->adaptive_method_box->setChecked(true);
+                        ui->list_method_box->setChecked(false);
                     }
                     else
-                        ui->adaptive_method_box->setEnabled(true);
+                    {
+                        ui->adaptive_method_box->setChecked(true);
+                        ui->list_method_box->setChecked(false);
+                    }
                 }
                 else if (pu.method == "list" || pu.method == "both")
                 {
                     ui->chat_list_name->setCurrentIndex(ui->chat_list_name->findText(pu.list_name));
                     if (pu.method == "list")
                     {
-                        ui->adaptive_method_box->setEnabled(false);
-                        ui->list_method_box->setEnabled(true);
+                        ui->adaptive_method_box->setChecked(false);
+                        ui->list_method_box->setChecked(true);
                     }
-                    else
-                        ui->list_method_box->setEnabled(true);
+                }
+                else if (pu.method == "")
+                {
+                    ui->adaptive_method_box->setChecked(false);
+                    ui->list_method_box->setChecked(false);
                 }
                 myParty.name = pu.party;
             }
             else if (pu.update_type == "start")
             {
-                ui->start_attack_button->click();
+                loadAccounts();
+                QTimer::singleShot(1000,this,SLOT(startAttack()));
             }
             else if (pu.update_type == "stop")
             {
-                ui->stop_attack_button->click();
+                if (myParty.enabled && myParty.owner)
+                {
+                    partyService * ps = psa->get();
+                    ps->stopParty(apikey,myParty.name);
+                    spamSystem->stop();
+                }
             }
             else if (pu.update_type == "message")
             {
                 QString html = ui->party_chat->toHtml();
-                html += "<p>"+ pu.nick + ": " + pu.message_text + "</p>";
+                html += pu.nick + ": " + pu.message_text;
                 ui->party_chat->setHtml(html);
             }
         }
+    }
+}
+
+void MainWindow::savePartyParamsResponse(nonQueryResult result)
+{
+    if (srv.contains("save"))
+        disconnect(srv["save"],SIGNAL(setPartyParamsResponse(nonQueryResult)),this,SLOT(savePartyParamsResponse(nonQueryResult)));
+    this->setEnabled(true);
+    if (result.error)
+    {
+        ui->status_label->setText("CONNECTION UNAVAILABLE");
+        return;
+    }
+    if (!result.success)
+    {
+        ui->status_label->setText("Unable to leave party: " + result.status);
+    }
+    else
+    {
+        ui->status_label->setText("");
+        ui->start_attack_button->setEnabled(true);
     }
 }
 
@@ -367,6 +405,85 @@ void MainWindow::loadUpdates()
     ps->updateParty(apikey,myParty.name);
     connect(ps,SIGNAL(updatePartyResponse(partyUpdatesResult)),this,SLOT(updatePartyResponse(partyUpdatesResult)));
     srv["updates"] = ps;
+}
+
+void MainWindow::startAttack()
+{
+    if (myParty.enabled && myParty.owner)
+    {
+        partyService * ps = psa->get();
+        ps->startParty(apikey,myParty.name);
+    }
+    QStringList banned;
+    for (QList<getBannedResult::spamAccountBan>::iterator it = banned_.begin(); it!= banned_.end(); ++it)
+        if ((*it).channel == ui->chat_channel->text())
+            banned.append((*it).login);
+    QStringList messageList;
+    int messageCap;
+    if (ui->message_count_cap_checkbox->isChecked())
+        messageCap = ui->message_count_cap->value();
+    else
+        messageCap = std::numeric_limits<int>::max();
+    spamSystem = new SpamSystem(ui->chat_server->text(),ui->server_port->text().toInt(),ui->chat_channel->text(),
+                                myAccounts_,allAccounts_,banned,messageList,ui->chat_text,
+                                ui->min_words->value(),ui->max_words->value(),
+                                ui->emotes_cap_checkbox->isChecked(),ui->emotes_cap->value(),
+                                ui->tolower_checkbox->isChecked(),ui->chat_cd->value(),
+                                messageCap,ui->read_before->value());
+    connect(spamSystem,SIGNAL(connectingState(int)),this,SLOT(connectingState(int)));
+    connect(spamSystem,SIGNAL(readingState(int)),this,SLOT(readingState(int)));
+    connect(spamSystem,SIGNAL(spammingState(int)),this,SLOT(spammingState(int)));
+    connect(spamSystem,SIGNAL(spamSocketConnected(int)),this,SLOT(socketConnected(int)));
+    connect(spamSystem,SIGNAL(readMessage(int)),this,SLOT(messageRead(int)));
+    connect(spamSystem,SIGNAL(messageSent(int)),this,SLOT(messageSent(int)));
+    connect(spamSystem,SIGNAL(wordAdded(QString)),this,SLOT(wordAdded(QString)));
+    spamSystem->startAdaptive();
+    ui->start_attack_button->setEnabled(false);
+    ui->stop_attack_button->setEnabled(true);
+}
+
+void MainWindow::connectingState(int max)
+{
+    ui->attack_status->setText("Connecting!");
+    ui->progress->setValue(0);
+    ui->progress->setMaximum(max);
+}
+
+void MainWindow::readingState(int max)
+{
+    ui->attack_status->setText("Reading!");
+    ui->progress->setValue(0);
+    ui->progress->setMaximum(max);
+}
+
+void MainWindow::spammingState(int max)
+{
+    ui->attack_status->setText("SPAMMING!");
+    ui->progress->setValue(0);
+    if (max == std::numeric_limits<int>::max())
+        ui->progress->setMaximum(0);
+    else
+        ui->progress->setMaximum(max);
+}
+
+void MainWindow::wordAdded(QString word)
+{
+    ui->messages_list->addItem(word);
+}
+
+void MainWindow::messageSent(int current)
+{
+    ui->progress->setValue(current);
+}
+
+void MainWindow::socketConnected(int current)
+{
+    ui->progress->setValue(current);
+}
+
+void MainWindow::messageRead(int current)
+{
+    ui->progress->setValue(current);
 }
 
 //add Account button
@@ -403,6 +520,12 @@ void MainWindow::on_pushButton_12_clicked()
     {
         selectedAccount = ui->accounts_list->currentItem()->text();
         delete ui->accounts_list->takeItem(ui->accounts_list->currentRow());
+        for (QList<getAccountsResult::spamAccountDescriptor>::iterator it = myAccounts_.begin(); it != myAccounts_.end(); ++it)
+            if ((*it).login == selectedAccount)
+            {
+                myAccounts_.erase(it);
+                break;
+            }
     }
     partyService * ps = psa->get();
     ps->removeAccount(apikey,selectedAccount);
@@ -476,7 +599,28 @@ void MainWindow::on_party_status_returnPressed()
 
 void MainWindow::on_save_params_button_clicked()
 {
-
+    partyService * ps = psa->get();
+    QString method;
+    if (ui->adaptive_method_box->isChecked())
+        if (ui->list_method_box->isChecked())
+            method = "both";
+        else
+            method = "adaptive";
+    else
+        if (ui->list_method_box->isChecked())
+            method = "list";
+        else
+            method = "";
+    ps->setPartyParams(apikey,myParty.name,ui->chat_server->text() + ":"+ui->server_port->text(),
+                       ui->chat_channel->text(),ui->chat_cd->value(),method,
+                       ui->read_before->value(),ui->min_words->value(),ui->max_words->value(),
+                       ui->chat_list_name->currentText(),
+                       ui->emotes_cap_checkbox->isChecked() ? ui->emotes_cap->value() : -1,
+                       !ui->tolower_checkbox->isChecked());
+    connect(ps,SIGNAL(setPartyParamsResponse(nonQueryResult)),this,SLOT(savePartyParamsResponse(nonQueryResult)));
+    srv["save"] = ps;
+    this->setEnabled(false);
+    ui->status_label->setText("Saving Params");
 }
 
 void MainWindow::on_lineEdit_3_returnPressed()
@@ -484,6 +628,32 @@ void MainWindow::on_lineEdit_3_returnPressed()
     partyService * ps = psa->get();
     ps->sendMessage(apikey,myParty.name,ui->lineEdit_3->text());
     QString html = ui->party_chat->toHtml();
-    html += "<p>"+ login + ": " + ui->lineEdit_3->text() + "</p>";
+    html += login + ": " + ui->lineEdit_3->text();
     ui->party_chat->setHtml(html);
+}
+
+void MainWindow::on_accounts_list_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
+{
+    if (current)
+    {
+        ui->pushButton_12->setEnabled(true);
+    }
+    else
+        ui->pushButton_12->setEnabled(false);
+}
+
+void MainWindow::on_start_attack_button_clicked()
+{
+    loadAccounts();
+    QTimer::singleShot(1000,this,SLOT(startAttack()));
+}
+
+void MainWindow::on_stop_attack_button_clicked()
+{
+    if (myParty.enabled && myParty.owner)
+    {
+        partyService * ps = psa->get();
+        ps->stopParty(apikey,myParty.name);
+        spamSystem->stop();
+    }
 }

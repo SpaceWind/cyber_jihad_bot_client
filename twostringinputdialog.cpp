@@ -6,7 +6,6 @@ twoStringInputDialog::twoStringInputDialog(QWidget *parent) :
     ui(new Ui::twoStringInputDialog)
 {
     ui->setupUi(this);
-    ui->label->setFocus();
 }
 
 void twoStringInputDialog::setTitle(QString title, QString label1, QString label2)
@@ -29,4 +28,14 @@ QString twoStringInputDialog::getValue2()
 twoStringInputDialog::~twoStringInputDialog()
 {
     delete ui;
+}
+
+void twoStringInputDialog::on_OkButton_clicked()
+{
+    accept();
+}
+
+void twoStringInputDialog::on_CancelButton_clicked()
+{
+    reject();
 }

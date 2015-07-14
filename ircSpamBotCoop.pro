@@ -17,13 +17,15 @@ SOURCES += main.cpp\
     loginwindow.cpp \
     partyservice.cpp \
     jsonparser.cpp \
-    twostringinputdialog.cpp
+    twostringinputdialog.cpp \
+    spamsystem.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
     partyservice.h \
     jsonparser.h \
-    twostringinputdialog.h
+    twostringinputdialog.h \
+    spamsystem.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \
