@@ -8,16 +8,16 @@ namespace Ui {
 class twoStringInputDialog;
 }
 
-class twoStringInputDialog : public QDialog
+class loginPassInputDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit twoStringInputDialog(QWidget *parent = 0);
+    explicit loginPassInputDialog(QWidget *parent = 0);
     void setTitle(QString title, QString label1, QString label2);
     QString getValue1();
     QString getValue2();
-    ~twoStringInputDialog();
+    ~loginPassInputDialog();
 
 private slots:
     void on_OkButton_clicked();

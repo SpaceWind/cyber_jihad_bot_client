@@ -17,19 +17,19 @@ SOURCES += main.cpp\
     loginwindow.cpp \
     partyservice.cpp \
     jsonparser.cpp \
-    twostringinputdialog.cpp \
-    spamsystem.cpp
+    spamsystem.cpp \
+    loginpassinputdialog.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
     partyservice.h \
     jsonparser.h \
-    twostringinputdialog.h \
-    spamsystem.h
+    spamsystem.h \
+    loginpassinputdialog.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \
-    twostringinputdialog.ui
+    loginpassinputdialog.ui
 
 RESOURCES += \
     res.qrc

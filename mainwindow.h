@@ -8,7 +8,7 @@
 #include <QListWidgetItem>
 #include <QCloseEvent>
 #include "partyservice.h"
-#include "twostringinputdialog.h"
+#include "loginpassinputdialog.h"
 #include "spamsystem.h"
 namespace Ui {
 class MainWindow;

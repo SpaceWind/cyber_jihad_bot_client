@@ -548,7 +548,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 //add Account button
 void MainWindow::on_pushButton_11_clicked()
 {
-    twoStringInputDialog d;
+    loginPassInputDialog d;
     d.setTitle("Input login and password","Login: ", "Pass: ");
     if (d.exec())
     {
@@ -608,7 +608,7 @@ void MainWindow::on_pushButton_12_clicked()
 
 void MainWindow::on_create_party_button_clicked()
 {
-    twoStringInputDialog d;
+    loginPassInputDialog d;
     d.setTitle("Create new group", "Name: ", "Pass: ");
     if (d.exec())
     {
@@ -626,7 +626,7 @@ void MainWindow::on_create_party_button_clicked()
 
 void MainWindow::on_join_party_button_clicked()
 {
-    twoStringInputDialog d;
+    loginPassInputDialog d;
     d.setTitle("Join the party", "Party name: ", "Pass: ");
     if (d.exec())
     {
