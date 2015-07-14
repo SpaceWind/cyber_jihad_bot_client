@@ -2,7 +2,7 @@
 #include "ui_twostringinputdialog.h"
 
 twoStringInputDialog::twoStringInputDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent,Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
     ui(new Ui::twoStringInputDialog)
 {
     ui->setupUi(this);

@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>CYBER JIHAD BOT 2.0 (BETA)</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="res.qrc">
+    <normaloff>:/icon.png</normaloff>:/icon.png</iconset>
   </property>
   <property name="tabShape">
    <enum>QTabWidget::Rounded</enum>
@@ -656,7 +660,7 @@ QTabBar::tab:hover {
          <widget class="QGroupBox" name="Words_box">
           <property name="maximumSize">
            <size>
-            <width>150</width>
+            <width>200</width>
             <height>16777215</height>
            </size>
           </property>

@@ -2,11 +2,14 @@
 <ui version="4.0">
  <class>loginWindow</class>
  <widget class="QDialog" name="loginWindow">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
+    <width>270</width>
     <height>235</height>
    </rect>
   </property>
@@ -20,12 +23,19 @@
    <enum>Qt::NoContextMenu</enum>
   </property>
   <property name="windowTitle">
-   <string>CYBER JIHAD BOT v 1.00</string>
+   <string>CYBER JIHAD BOT 2.0 (BETA)</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="res.qrc">
+    <normaloff>:/icon.png</normaloff>:/icon.png</iconset>
   </property>
   <property name="whatsThis">
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SetDefaultConstraint</enum>
+   </property>
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="styleSheet">
@@ -108,16 +118,6 @@ QTabBar::tab:hover {
           <string/>
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Login:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="login_login"/>
-          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
@@ -144,6 +144,16 @@ QTabBar::tab:hover {
              <string>LOGIN</string>
             </property>
            </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Login:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="login_login"/>
           </item>
          </layout>
         </widget>
@@ -227,6 +237,18 @@ QTabBar::tab:hover {
    </item>
   </layout>
  </widget>
- <resources/>
+ <tabstops>
+  <tabstop>login_login</tabstop>
+  <tabstop>login_pass</tabstop>
+  <tabstop>login_button</tabstop>
+  <tabstop>reg_login</tabstop>
+  <tabstop>reg_pass</tabstop>
+  <tabstop>reg_invite</tabstop>
+  <tabstop>register_button</tabstop>
+  <tabstop>tabWidget</tabstop>
+ </tabstops>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -9,6 +9,7 @@
 #include <QtGlobal>
 #include <QList>
 #include <QTimer>
+#include <QTime>
 #include <limits>
 #include "partyservice.h"
 
@@ -51,6 +52,7 @@ public:
                                QStringList* words);
     virtual void connectToHost() const;
     virtual void disconnect();
+    virtual QString getNick(){return nickname_;}
 
 signals:
     //this signal sends when socket got connected
@@ -80,6 +82,7 @@ public:
 signals:
     void wordAdded(QString word);
     void messageRead();
+    void spamBotResponsed(QString nickname);
 
 
 public slots:
@@ -150,6 +153,7 @@ public:
     void startList();
     void startBoth();
     void stop();
+    QString getGrabber(){return grabberLogin;}
 signals:
     void connectingState(int total);
     void readingState(int total);
@@ -160,12 +164,15 @@ signals:
     void readMessage(int current);
     void wordAdded(QString word);
     void stopped();
+    void banned(QString nick);
 public slots:
     void socketConnected();
     void connectNextSocket();
     void grabberReadMessage();
     void grabberWordAdd(QString word);
     void sendMessage();
+    void spamBotResponsed(QString nickname);
+    void checkBanned();
 
 private:
     QList<getAccountsResult::spamAccountDescriptor> myAccounts_;
@@ -180,9 +187,13 @@ private:
 
     QTimer connectTimer;
     QTimer sendMessageTimer;
+    QTimer checkBannedTimer;
 
     SpamParams params;
     spamState state;
+    bool cleanStaticValues;
+    QString grabberLogin;
+    QHash<QString,QTime> spamCommits;
 };
 
 

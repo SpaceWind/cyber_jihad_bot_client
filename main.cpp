@@ -6,6 +6,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     loginWindow w;
+    w.setFixedSize(w.geometry().width(),w.geometry().height());
     MainWindow mw;
     if (w.exec())
     {

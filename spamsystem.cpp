@@ -120,7 +120,7 @@ void GrabMessageIrcSocket::parseMessage()
             if (!spambots_->contains(message.nickname))
             {
                 if (textEdit_)
-                    textEdit_->append(message.nickname + ": " + message.message);
+                    textEdit_->append(message.nickname + ": " + message.message.simplified());
                 QStringList wordsInMessage = message.message.split(" ");
                 QString wordToAdd;
                 foreach (const QString& str, wordsInMessage)
@@ -149,6 +149,10 @@ void GrabMessageIrcSocket::parseMessage()
 
                 emit messageRead();
 
+            }
+            else
+            {
+                emit spamBotResponsed(message.nickname);
             }
         }
     }
@@ -308,6 +312,7 @@ SpamSystem::SpamSystem(QString host, int port, QString channel, QList<getAccount
     messageList_ = messageList;
     state = IDLE;
     grabber = 0;
+    cleanStaticValues = false;
 }
 
 SpamSystem::~SpamSystem()
@@ -324,6 +329,8 @@ void SpamSystem::startAdaptive()
     grabber = new GrabMessageIrcSocket(params._host,params._port,params._channel,
                                        myAccounts_.at(grabberIndex).login,myAccounts_.at(grabberIndex).pass,
                                        &words_,&allAccounts_,params.out);
+    connect(grabber,SIGNAL(spamBotResponsed(QString)),this, SLOT(spamBotResponsed(QString)));
+    grabberLogin = myAccounts_.at(grabberIndex).login;
     myAccounts_.removeAt(grabberIndex);
 
     emit connectingState(myAccounts_.count());
@@ -331,6 +338,11 @@ void SpamSystem::startAdaptive()
     currentConnectNumber = 0;
     connect(&connectTimer,SIGNAL(timeout()),this,SLOT(connectNextSocket()));
     connectTimer.start(300);
+
+    connect(&checkBannedTimer,SIGNAL(timeout()),this,SLOT(checkBanned()));
+    checkBannedTimer.start(2000);
+
+
     while (!spammers.isEmpty())
     {
         SpamMessageSocket* s = spammers.first();
@@ -343,10 +355,17 @@ void SpamSystem::stop()
 {
     connectTimer.stop();
     sendMessageTimer.stop();
+    cleanStaticValues = true;
+    socketConnected();
+    grabberReadMessage();
+    delete grabber;
+    grabber = 0;
 }
 void SpamSystem::socketConnected()
 {
     static int socketConnectedCount = 0;
+    if (socketConnectedCount)
+        socketConnectedCount = 0;
     socketConnectedCount++;
     emit spamSocketConnected(socketConnectedCount);
     if (socketConnectedCount == myAccounts_.count())
@@ -380,6 +399,8 @@ void SpamSystem::connectNextSocket()
 void SpamSystem::grabberReadMessage()
 {
     static int grabberMessageReadCount = 0;
+    if (cleanStaticValues)
+        grabberMessageReadCount = 0;
     grabberMessageReadCount++;
     emit readMessage(grabberMessageReadCount);
     if (grabberMessageReadCount == params._beforeAttack)
@@ -399,9 +420,15 @@ void SpamSystem::grabberWordAdd(QString word)
 
 void SpamSystem::sendMessage()
 {
-    if (params.newMessage())
+    if (params.newMessage() && spammers.count() > 0)
     {
         spammers.at(params._messageCount%spammers.count())->sendMessage();
+        QString spammerNick = spammers.at(params._messageCount%spammers.count())->getNick();
+        if (!spamCommits.contains(spammerNick))
+        {
+            spamCommits[spammerNick] = QTime::currentTime();
+            spamCommits[spammerNick].start();
+        }
         emit messageSent(params._messageCount);
     }
     else
@@ -409,5 +436,37 @@ void SpamSystem::sendMessage()
         emit stopped();
         disconnect(&sendMessageTimer,SIGNAL(timeout()),this,SLOT(sendMessage()));
         state = IDLE;
+    }
+}
+
+void SpamSystem::spamBotResponsed(QString nickname)
+{
+    if (spamCommits.contains(nickname))
+        spamCommits.remove(nickname);
+}
+
+void SpamSystem::checkBanned()
+{
+    for (QHash<QString, QTime>::iterator it = spamCommits.begin(); it != spamCommits.end(); ++it)
+    {
+        if (it.value().elapsed() > 3000)
+        {
+            QString nickName = it.key();
+            emit banned(it.key());
+            spamCommits.erase(it);
+            for (QList<getAccountsResult::spamAccountDescriptor>::iterator i = myAccounts_.begin(); i != myAccounts_.end(); ++i)
+                if ((*i).login == nickName)
+                {
+                    myAccounts_.erase(i);
+                    break;
+                }
+            for (QList<SpamMessageSocket*>::iterator i = spammers.begin(); i != spammers.end(); ++i)
+                if ((*i)->getNick() == nickName)
+                {
+                    spammers.erase(i);
+                    break;
+                }
+            break;
+        }
     }
 }

@@ -16,6 +16,7 @@ void MainWindow::setup()
     loadAccounts();
     connect(&partyUpdateTimer,SIGNAL(timeout()),this,SLOT(loadUpdates()));
     spamSystem = 0;
+    myParty.enabled = false;
 }
 
 void MainWindow::loadAccounts()
@@ -60,6 +61,12 @@ void MainWindow::loadAccountsResponse(getAccountsResult result)
             ui->accounts_list->addItem((*it).login);
         }
         allAccounts_.append((*it).login);
+    }
+    if (myAccounts_.count() < 2)
+    {
+        ui->join_party_button->setEnabled(false);
+        ui->create_party_button->setEnabled(false);
+        ui->start_attack_button->setEnabled(false);
     }
 }
 
@@ -365,8 +372,17 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
                 {
                     partyService * ps = psa->get();
                     ps->stopParty(apikey,myParty.name);
-                    spamSystem->stop();
                 }
+                spamSystem->stop();
+                ui->stop_attack_button->setEnabled(false);
+                ui->start_attack_button->setEnabled(true);
+                if (!myParty.enabled)
+                {
+                    ui->pushButton_11->setEnabled(true);
+                    ui->pushButton_12->setEnabled(true);
+                }
+                ui->messages_list->clear();
+                ui->attack_status->setText("Ready for a next attack!");
             }
             else if (pu.update_type == "message")
             {
@@ -424,6 +440,8 @@ void MainWindow::startAttack()
         messageCap = ui->message_count_cap->value();
     else
         messageCap = std::numeric_limits<int>::max();
+    if (spamSystem)
+        delete spamSystem;
     spamSystem = new SpamSystem(ui->chat_server->text(),ui->server_port->text().toInt(),ui->chat_channel->text(),
                                 myAccounts_,allAccounts_,banned,messageList,ui->chat_text,
                                 ui->min_words->value(),ui->max_words->value(),
@@ -437,9 +455,35 @@ void MainWindow::startAttack()
     connect(spamSystem,SIGNAL(readMessage(int)),this,SLOT(messageRead(int)));
     connect(spamSystem,SIGNAL(messageSent(int)),this,SLOT(messageSent(int)));
     connect(spamSystem,SIGNAL(wordAdded(QString)),this,SLOT(wordAdded(QString)));
+    connect(spamSystem,SIGNAL(banned(QString)),this,SLOT(markBanned(QString)));
     spamSystem->startAdaptive();
     ui->start_attack_button->setEnabled(false);
     ui->stop_attack_button->setEnabled(true);
+    ui->pushButton_11->setEnabled(false);
+    ui->pushButton_12->setEnabled(false);
+    QString grabberLogin = spamSystem->getGrabber();
+    for (int i=0; i< ui->accounts_list->count(); i++)
+        if (ui->accounts_list->item(i)->text() == grabberLogin)
+            ui->accounts_list->item(i)->setBackgroundColor(QColor::fromRgb(255,180,100));
+        else
+            ui->accounts_list->item(i)->setBackgroundColor(QColor::fromRgb(255,255,255));
+}
+
+void MainWindow::leavePartyOnExit()
+{
+    if (myParty.enabled)
+    {
+        partyService * ps = psa->get();
+        ps->leaveParty(apikey,myParty.name);
+        connect(ps,SIGNAL(leavePartyResponse(nonQueryResult)),this,SLOT(applicationExit()));
+    }
+    else
+        applicationExit();
+}
+
+void MainWindow::applicationExit()
+{
+    qApp->exit();
 }
 
 void MainWindow::connectingState(int max)
@@ -486,6 +530,21 @@ void MainWindow::messageRead(int current)
     ui->progress->setValue(current);
 }
 
+void MainWindow::markBanned(QString nick)
+{
+    for (int i=0; i<ui->accounts_list->count(); i++)
+    {
+        if (ui->accounts_list->item(i)->text() == nick)
+            ui->accounts_list->item(i)->setBackgroundColor(QColor::fromRgb(210,0,0));
+    }
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    leavePartyOnExit();
+    event->ignore();
+}
+
 //add Account button
 void MainWindow::on_pushButton_11_clicked()
 {
@@ -508,6 +567,12 @@ void MainWindow::on_pushButton_11_clicked()
         if (ui->accounts_list->findItems(d.getValue1(),Qt::MatchContains).count() == 0)
         {
             ui->accounts_list->addItem(acc.login);
+        }
+        if (myAccounts_.count() >= 2)
+        {
+            ui->join_party_button->setEnabled(true);
+            ui->create_party_button->setEnabled(admin);
+            ui->start_attack_button->setEnabled(true);
         }
     }
 }
@@ -533,6 +598,12 @@ void MainWindow::on_pushButton_12_clicked()
     srv["removeAccount"] = ps;
     ui->accounts_list->setEnabled(false);
     ui->pushButton_12->setEnabled(false);
+    if (myAccounts_.count() < 2)
+    {
+        ui->join_party_button->setEnabled(false);
+        ui->create_party_button->setEnabled(false);
+        ui->start_attack_button->setEnabled(false);
+    }
 }
 
 void MainWindow::on_create_party_button_clicked()
@@ -630,16 +701,19 @@ void MainWindow::on_lineEdit_3_returnPressed()
     QString html = ui->party_chat->toHtml();
     html += login + ": " + ui->lineEdit_3->text();
     ui->party_chat->setHtml(html);
+    ui->lineEdit_3->setText("");
 }
 
-void MainWindow::on_accounts_list_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
+void MainWindow::on_accounts_list_currentItemChanged(QListWidgetItem *current)
 {
-    if (current)
+
+    if (!((!ui->start_attack_button->isEnabled()) && ui->stop_attack_button->isEnabled()) && !myParty.enabled)
     {
-        ui->pushButton_12->setEnabled(true);
+        if (current)
+            ui->pushButton_12->setEnabled(true);
+        else
+            ui->pushButton_12->setEnabled(false);
     }
-    else
-        ui->pushButton_12->setEnabled(false);
 }
 
 void MainWindow::on_start_attack_button_clicked()
@@ -654,6 +728,16 @@ void MainWindow::on_stop_attack_button_clicked()
     {
         partyService * ps = psa->get();
         ps->stopParty(apikey,myParty.name);
-        spamSystem->stop();
     }
+
+    spamSystem->stop();
+    ui->stop_attack_button->setEnabled(false);
+    ui->start_attack_button->setEnabled(true);
+    if (!myParty.enabled)
+    {
+        ui->pushButton_11->setEnabled(true);
+        ui->pushButton_12->setEnabled(true);
+    }
+    ui->messages_list->clear();
+    ui->attack_status->setText("Ready for a next attack!");
 }

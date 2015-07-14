@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QList>
 #include <QListWidgetItem>
+#include <QCloseEvent>
 #include "partyservice.h"
 #include "twostringinputdialog.h"
 #include "spamsystem.h"
@@ -39,6 +40,8 @@ public:
 
 
 public slots:
+
+
     void loadAccountsResponse(getAccountsResult result);
     void addAccountResponse(nonQueryResult result);
     void removeAccountResponse(nonQueryResult result);
@@ -51,6 +54,8 @@ public slots:
 
     void loadUpdates();
     void startAttack();
+    void leavePartyOnExit();
+    void applicationExit();
 private slots:
     void connectingState(int max);
     void readingState(int max);
@@ -59,6 +64,10 @@ private slots:
     void messageSent(int current);
     void socketConnected(int current);
     void messageRead(int current);
+
+    void markBanned(QString nick);
+
+    void closeEvent(QCloseEvent *event);
 
 
 
@@ -72,7 +81,7 @@ private slots:
     void on_party_status_returnPressed();
     void on_save_params_button_clicked();
     void on_lineEdit_3_returnPressed();
-    void on_accounts_list_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+    void on_accounts_list_currentItemChanged(QListWidgetItem *current);
     void on_start_attack_button_clicked();
     void on_stop_attack_button_clicked();
 
