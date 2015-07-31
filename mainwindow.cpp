@@ -487,7 +487,9 @@ void MainWindow::applicationExit()
 }
 
 void MainWindow::connectingState(int max)
-{
+{ 
+    sendStatus(ui->party_status->text(),ui->ready_checkbox->isChecked(),"<->");
+    attackStatus = "<->";
     ui->attack_status->setText("Connecting!");
     ui->progress->setValue(0);
     ui->progress->setMaximum(max);
@@ -495,6 +497,8 @@ void MainWindow::connectingState(int max)
 
 void MainWindow::readingState(int max)
 {
+    sendStatus(ui->party_status->text(),ui->ready_checkbox->isChecked(),"<--");
+    attackStatus = "<--";
     ui->attack_status->setText("Reading!");
     ui->progress->setValue(0);
     ui->progress->setMaximum(max);
@@ -502,6 +506,8 @@ void MainWindow::readingState(int max)
 
 void MainWindow::spammingState(int max)
 {
+    sendStatus(ui->party_status->text(),ui->ready_checkbox->isChecked(),"-->");
+    attackStatus = "-->";
     ui->attack_status->setText("SPAMMING!");
     ui->progress->setValue(0);
     if (max == std::numeric_limits<int>::max())
@@ -536,6 +542,16 @@ void MainWindow::markBanned(QString nick)
     {
         if (ui->accounts_list->item(i)->text() == nick)
             ui->accounts_list->item(i)->setBackgroundColor(QColor::fromRgb(210,0,0));
+    }
+}
+
+void MainWindow::sendStatus(QString status, bool ready, QString info)
+{
+    if (myParty.enabled)
+    {
+        partyService * ps = psa->get();
+        QString st = (ready ? "::READY::" : "") + status + " [" + info + "]";
+        ps->changeStatus(apikey,myParty.name,st);
     }
 }
 
@@ -656,16 +672,14 @@ void MainWindow::on_leave_party_button_clicked()
 
 void MainWindow::on_ready_checkbox_clicked(bool checked)
 {
-    partyService * ps = psa->get();
-    QString status = (checked ? "::READY::" : "") + ui->party_status->text();
-    ps->changeStatus(apikey,myParty.name,status);
+
+    sendStatus(ui->party_status->text(),checked,attackStatus);
 }
+
 
 void MainWindow::on_party_status_returnPressed()
 {
-    partyService * ps = psa->get();
-    QString status = (ui->ready_checkbox->isChecked() ? "::READY::" : "") + ui->party_status->text();
-    ps->changeStatus(apikey,myParty.name,status);
+    sendStatus(ui->party_status->text(),ui->ready_checkbox->isChecked(),attackStatus);
 }
 
 void MainWindow::on_save_params_button_clicked()

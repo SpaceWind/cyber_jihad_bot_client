@@ -18,14 +18,16 @@ SOURCES += main.cpp\
     partyservice.cpp \
     jsonparser.cpp \
     spamsystem.cpp \
-    loginpassinputdialog.cpp
+    loginpassinputdialog.cpp \
+    tinylogger.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
     partyservice.h \
     jsonparser.h \
     spamsystem.h \
-    loginpassinputdialog.h
+    loginpassinputdialog.h \
+    tinylogger.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \

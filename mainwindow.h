@@ -66,7 +66,7 @@ private slots:
     void messageRead(int current);
 
     void markBanned(QString nick);
-
+    void sendStatus(QString status, bool ready, QString info);
     void closeEvent(QCloseEvent *event);
 
 
@@ -100,6 +100,7 @@ private:
 
     QTimer partyUpdateTimer;
     SpamSystem * spamSystem;
+    QString attackStatus;
 
 };
 

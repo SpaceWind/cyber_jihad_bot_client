@@ -245,7 +245,7 @@ void SpamMessageSocket::setupTwitchEmotes()
     QFile textFile("emotes.txt");
     if(!textFile.open(QIODevice::ReadOnly))
     {
-        qDebug("Error");
+        qDebug("cant open emotes file");
         return;
     }
 
@@ -312,7 +312,6 @@ SpamSystem::SpamSystem(QString host, int port, QString channel, QList<getAccount
     messageList_ = messageList;
     state = IDLE;
     grabber = 0;
-    cleanStaticValues = false;
 }
 
 SpamSystem::~SpamSystem()
@@ -338,6 +337,7 @@ void SpamSystem::startAdaptive()
     currentConnectNumber = 0;
     connect(&connectTimer,SIGNAL(timeout()),this,SLOT(connectNextSocket()));
     connectTimer.start(300);
+    socketConnectedCount = 0;
 
     connect(&checkBannedTimer,SIGNAL(timeout()),this,SLOT(checkBanned()));
     checkBannedTimer.start(2000);
@@ -355,17 +355,11 @@ void SpamSystem::stop()
 {
     connectTimer.stop();
     sendMessageTimer.stop();
-    cleanStaticValues = true;
-    socketConnected();
-    grabberReadMessage();
     delete grabber;
     grabber = 0;
 }
 void SpamSystem::socketConnected()
 {
-    static int socketConnectedCount = 0;
-    if (socketConnectedCount)
-        socketConnectedCount = 0;
     socketConnectedCount++;
     emit spamSocketConnected(socketConnectedCount);
     if (socketConnectedCount == myAccounts_.count())
@@ -378,6 +372,7 @@ void SpamSystem::socketConnected()
             grabber->connectToHost();
             connect(grabber,SIGNAL(messageRead()),this,SLOT(grabberReadMessage()));
             connect(grabber,SIGNAL(wordAdded(QString)),this,SLOT(grabberWordAdd(QString)));
+            grabberMessageReadCount = 0;
         }
     }
 }
@@ -398,9 +393,6 @@ void SpamSystem::connectNextSocket()
 
 void SpamSystem::grabberReadMessage()
 {
-    static int grabberMessageReadCount = 0;
-    if (cleanStaticValues)
-        grabberMessageReadCount = 0;
     grabberMessageReadCount++;
     emit readMessage(grabberMessageReadCount);
     if (grabberMessageReadCount == params._beforeAttack)

@@ -191,9 +191,10 @@ private:
 
     SpamParams params;
     spamState state;
-    bool cleanStaticValues;
     QString grabberLogin;
     QHash<QString,QTime> spamCommits;
+    int socketConnectedCount;
+    int grabberMessageReadCount;
 };
 
 
