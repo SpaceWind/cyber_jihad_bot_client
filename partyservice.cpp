@@ -3,6 +3,7 @@
 partyService::partyService(QString serverURL, QObject *parent) : QObject(parent)
 {
     remoteServer_ = new RemoteServer(serverURL);
+    isActive_ = true;
 }
 
 partyService::~partyService()
@@ -144,7 +145,6 @@ void partyService::changeStatus(QString apikey, QString party, QString status)
     params["apikey"] = apikey;
     params["party"] = party;
     params["status"] = status;
-
     QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(changeStatusServerResponse(QByteArray)));
     remoteServer_->call("party status",params);
     isActive_ = false;
@@ -156,7 +156,6 @@ void partyService::sendMessage(QString apikey, QString party, QString message)
     params["apikey"] = apikey;
     params["party"] = party;
     params["m"] = message;
-
     QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(sendMessageServerResponse(QByteArray)));
     remoteServer_->call("party message",params);
     isActive_ = false;
@@ -227,6 +226,12 @@ void partyService::updateParty(QString apikey, QString party)
     QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(updatePartyServerResponse(QByteArray)));
     remoteServer_->call("party update",params);
     isActive_ = false;
+}
+
+partyService* partyService::take()
+{
+    isActive_ = false;
+    return this;
 }
 
 
@@ -669,8 +674,17 @@ partyService *partyServiceAllocator::get()
 {
     for (int i=0; i<items.count(); ++i)
         if (items[i]->isActive())
-            return items[i];
+            return items[i]->take();
     return 0;
+}
+
+int partyServiceAllocator::tookCount()
+{
+    int count = 0;
+    for (int i=0; i< items.count(); i++)
+        if (!items[i]->isActive())
+            count++;
+    return count;
 }
 
 partyServiceAllocator::~partyServiceAllocator()

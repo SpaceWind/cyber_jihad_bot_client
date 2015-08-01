@@ -6,7 +6,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",10);
+    psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",100);
+    logger = new TinyLogger("log.txt",this);
 }
 
 void MainWindow::setup()
@@ -17,16 +18,22 @@ void MainWindow::setup()
     connect(&partyUpdateTimer,SIGNAL(timeout()),this,SLOT(loadUpdates()));
     spamSystem = 0;
     myParty.enabled = false;
+
 }
 
 void MainWindow::loadAccounts()
 {
     partyService * ps = psa->get();
-    ps->getAccounts(apikey,true);
-    connect(ps,SIGNAL(getAccountsResponse(getAccountsResult)),this,SLOT(loadAccountsResponse(getAccountsResult)));
-    srv["getAccounts"] = ps;
-    ui->status_label->setText("loading accounts");
-    this->setEnabled(false);
+    if (ps)
+    {
+        ps->getAccounts(apikey,true);
+        connect(ps,SIGNAL(getAccountsResponse(getAccountsResult)),this,SLOT(loadAccountsResponse(getAccountsResult)));
+        srv["getAccounts"] = ps;
+        ui->status_label->setText("loading accounts");
+        this->setEnabled(false);
+    }
+    else
+        ui->status_label->setText("Server is busy try later");
 }
 
 MainWindow::~MainWindow()
@@ -418,9 +425,15 @@ void MainWindow::savePartyParamsResponse(nonQueryResult result)
 void MainWindow::loadUpdates()
 {
     partyService * ps = psa->get();
-    ps->updateParty(apikey,myParty.name);
-    connect(ps,SIGNAL(updatePartyResponse(partyUpdatesResult)),this,SLOT(updatePartyResponse(partyUpdatesResult)));
-    srv["updates"] = ps;
+    logger->log(TinyLogger::ERROR, ps == 0 ? "loadUpdates: ps == NULL!" : "OK");
+    if (ps)
+    {
+        ps->updateParty(apikey,myParty.name);
+        connect(ps,SIGNAL(updatePartyResponse(partyUpdatesResult)),this,SLOT(updatePartyResponse(partyUpdatesResult)));
+        srv["updates"] = ps;
+    }
+    else
+        ui->status_label->setText("Server is busy. Try again later");
 }
 
 void MainWindow::startAttack()
@@ -428,7 +441,14 @@ void MainWindow::startAttack()
     if (myParty.enabled && myParty.owner)
     {
         partyService * ps = psa->get();
-        ps->startParty(apikey,myParty.name);
+        logger->log(TinyLogger::ERROR, ps == 0 ? "startAttack ps == NULL!" : "OK");
+        if (ps)
+            ps->startParty(apikey,myParty.name);
+        else
+        {
+            ui->status_label->setText("Server is busy. Try again later");
+            return;
+        }
     }
     QStringList banned;
     for (QList<getBannedResult::spamAccountBan>::iterator it = banned_.begin(); it!= banned_.end(); ++it)
@@ -442,12 +462,16 @@ void MainWindow::startAttack()
         messageCap = std::numeric_limits<int>::max();
     if (spamSystem)
         delete spamSystem;
+
+    logger->log(TinyLogger::DEBUG, "starting spam system");
     spamSystem = new SpamSystem(ui->chat_server->text(),ui->server_port->text().toInt(),ui->chat_channel->text(),
                                 myAccounts_,allAccounts_,banned,messageList,ui->chat_text,
                                 ui->min_words->value(),ui->max_words->value(),
                                 ui->emotes_cap_checkbox->isChecked(),ui->emotes_cap->value(),
                                 ui->tolower_checkbox->isChecked(),ui->chat_cd->value(),
                                 messageCap,ui->read_before->value());
+    logger->log(TinyLogger::DEBUG, "creating connections");
+
     connect(spamSystem,SIGNAL(connectingState(int)),this,SLOT(connectingState(int)));
     connect(spamSystem,SIGNAL(readingState(int)),this,SLOT(readingState(int)));
     connect(spamSystem,SIGNAL(spammingState(int)),this,SLOT(spammingState(int)));
@@ -456,11 +480,14 @@ void MainWindow::startAttack()
     connect(spamSystem,SIGNAL(messageSent(int)),this,SLOT(messageSent(int)));
     connect(spamSystem,SIGNAL(wordAdded(QString)),this,SLOT(wordAdded(QString)));
     connect(spamSystem,SIGNAL(banned(QString)),this,SLOT(markBanned(QString)));
+
+    logger->log(TinyLogger::DEBUG, "starting adaptive");
     spamSystem->startAdaptive();
     ui->start_attack_button->setEnabled(false);
     ui->stop_attack_button->setEnabled(true);
     ui->pushButton_11->setEnabled(false);
     ui->pushButton_12->setEnabled(false);
+    logger->log(TinyLogger::DEBUG, "coloring grabbers");
     QString grabberLogin = spamSystem->getGrabber();
     for (int i=0; i< ui->accounts_list->count(); i++)
         if (ui->accounts_list->item(i)->text() == grabberLogin)
@@ -474,8 +501,17 @@ void MainWindow::leavePartyOnExit()
     if (myParty.enabled)
     {
         partyService * ps = psa->get();
-        ps->leaveParty(apikey,myParty.name);
-        connect(ps,SIGNAL(leavePartyResponse(nonQueryResult)),this,SLOT(applicationExit()));
+        logger->log(TinyLogger::ERROR, ps == 0 ? "leaveParty: ps == NULL!" : "OK");
+        if (ps)
+        {
+            ps->leaveParty(apikey,myParty.name);
+            connect(ps,SIGNAL(leavePartyResponse(nonQueryResult)),this,SLOT(applicationExit()));
+        }
+        else
+        {
+            ui->status_label->setText("Server is busy. Try again later");
+            return;
+        }
     }
     else
         applicationExit();
@@ -550,8 +586,14 @@ void MainWindow::sendStatus(QString status, bool ready, QString info)
     if (myParty.enabled)
     {
         partyService * ps = psa->get();
-        QString st = (ready ? "::READY::" : "") + status + " [" + info + "]";
-        ps->changeStatus(apikey,myParty.name,st);
+        logger->log(TinyLogger::ERROR, ps == 0 ? "send status: ps == NULL!" : "OK");
+        if (ps)
+        {
+            QString st = (ready ? "::READY::" : "") + status + " [" + info + "]";
+            ps->changeStatus(apikey,myParty.name,st);
+        }
+        else
+            ui->status_label->setText("Server is busy. Try again later");
     }
 }
 
@@ -559,6 +601,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     leavePartyOnExit();
     event->ignore();
+}
+
+void MainWindow::displayTookServices()
+{
+    ui->status_label->setText(QString::number(psa->tookCount()));
 }
 
 //add Account button
@@ -569,27 +616,33 @@ void MainWindow::on_pushButton_11_clicked()
     if (d.exec())
     {
         partyService * ps = psa->get();
-        ps->addAccount(apikey,d.getValue1(),d.getValue2());
-        connect(ps,SIGNAL(addAccountResponse(nonQueryResult)),this,SLOT(addAccountResponse(nonQueryResult)));
-        srv["addAccount"] = ps;
-        ui->pushButton_11->setEnabled(false);
-        ui->status_label->setText("Adding Account");
-        allAccounts_.append(d.getValue1());
-        getAccountsResult::spamAccountDescriptor acc;
-        acc.login = d.getValue1();
-        acc.pass = d.getValue2();
-        acc.owner = login;
-        myAccounts_.append(acc);
-        if (ui->accounts_list->findItems(d.getValue1(),Qt::MatchContains).count() == 0)
+        logger->log(TinyLogger::ERROR, ps == 0 ? "add Acc: ps == NULL!" : "OK");
+        if (ps)
         {
-            ui->accounts_list->addItem(acc.login);
+            ps->addAccount(apikey,d.getValue1(),d.getValue2());
+            connect(ps,SIGNAL(addAccountResponse(nonQueryResult)),this,SLOT(addAccountResponse(nonQueryResult)));
+            srv["addAccount"] = ps;
+            ui->pushButton_11->setEnabled(false);
+            ui->status_label->setText("Adding Account");
+            allAccounts_.append(d.getValue1());
+            getAccountsResult::spamAccountDescriptor acc;
+            acc.login = d.getValue1();
+            acc.pass = d.getValue2();
+            acc.owner = login;
+            myAccounts_.append(acc);
+            if (ui->accounts_list->findItems(d.getValue1(),Qt::MatchContains).count() == 0)
+            {
+                ui->accounts_list->addItem(acc.login);
+            }
+            if (myAccounts_.count() >= 2)
+            {
+                ui->join_party_button->setEnabled(true);
+                ui->create_party_button->setEnabled(admin);
+                ui->start_attack_button->setEnabled(true);
+            }
         }
-        if (myAccounts_.count() >= 2)
-        {
-            ui->join_party_button->setEnabled(true);
-            ui->create_party_button->setEnabled(admin);
-            ui->start_attack_button->setEnabled(true);
-        }
+        else
+            ui->status_label->setText("Server is busy. Try again later");
     }
 }
 
@@ -609,17 +662,23 @@ void MainWindow::on_pushButton_12_clicked()
             }
     }
     partyService * ps = psa->get();
-    ps->removeAccount(apikey,selectedAccount);
-    connect(ps,SIGNAL(removeAccountResponse(nonQueryResult)),this,SLOT(removeAccountResponse(nonQueryResult)));
-    srv["removeAccount"] = ps;
-    ui->accounts_list->setEnabled(false);
-    ui->pushButton_12->setEnabled(false);
-    if (myAccounts_.count() < 2)
+    logger->log(TinyLogger::ERROR, ps == 0 ? "remove Acc: ps == NULL!" : "OK");
+    if (ps)
     {
-        ui->join_party_button->setEnabled(false);
-        ui->create_party_button->setEnabled(false);
-        ui->start_attack_button->setEnabled(false);
+        ps->removeAccount(apikey,selectedAccount);
+        connect(ps,SIGNAL(removeAccountResponse(nonQueryResult)),this,SLOT(removeAccountResponse(nonQueryResult)));
+        srv["removeAccount"] = ps;
+        ui->accounts_list->setEnabled(false);
+        ui->pushButton_12->setEnabled(false);
+        if (myAccounts_.count() < 2)
+        {
+            ui->join_party_button->setEnabled(false);
+            ui->create_party_button->setEnabled(false);
+            ui->start_attack_button->setEnabled(false);
+        }
     }
+    else
+        ui->status_label->setText("Server is busy. Try again later");
 }
 
 void MainWindow::on_create_party_button_clicked()
@@ -629,14 +688,20 @@ void MainWindow::on_create_party_button_clicked()
     if (d.exec())
     {
         partyService * ps = psa->get();
-        ps->createParty(apikey,d.getValue2(),d.getValue1());
-        connect(ps,SIGNAL(createPartyResponse(nonQueryResult)),this,SLOT(createPartyResponse(nonQueryResult)));
-        srv["createParty"] = ps;
-        ui->create_party_button->setEnabled(false);
-        ui->join_party_button->setEnabled(false);
-        ui->status_label->setText("Creating Party");
-        myParty.name = d.getValue1();
-        myParty.pass = d.getValue2();
+        logger->log(TinyLogger::ERROR, ps == 0 ? "create Party: ps == NULL!" : "OK");
+        if (ps)
+        {
+            ps->createParty(apikey,d.getValue2(),d.getValue1());
+            connect(ps,SIGNAL(createPartyResponse(nonQueryResult)),this,SLOT(createPartyResponse(nonQueryResult)));
+            srv["createParty"] = ps;
+            ui->create_party_button->setEnabled(false);
+            ui->join_party_button->setEnabled(false);
+            ui->status_label->setText("Creating Party");
+            myParty.name = d.getValue1();
+            myParty.pass = d.getValue2();
+        }
+        else
+            ui->status_label->setText("Server is busy. Try again later");
     }
 }
 
@@ -647,13 +712,19 @@ void MainWindow::on_join_party_button_clicked()
     if (d.exec())
     {
         partyService * ps = psa->get();
-        ps->joinParty(apikey, d.getValue1(), d.getValue2());
-        connect(ps,SIGNAL(joinPartyResponse(joinPartyResult)),this, SLOT(joinPartyResponse(joinPartyResult)));
-        srv["joinParty"] = ps;
-        this->setEnabled(false);
-        myParty.name = d.getValue1();
-        myParty.pass = d.getValue2();
-        myParty.enabled = false;
+        logger->log(TinyLogger::ERROR, ps == 0 ? "joinParty: ps == NULL!" : "OK");
+        if (ps)
+        {
+            ps->joinParty(apikey, d.getValue1(), d.getValue2());
+            connect(ps,SIGNAL(joinPartyResponse(joinPartyResult)),this, SLOT(joinPartyResponse(joinPartyResult)));
+            srv["joinParty"] = ps;
+            this->setEnabled(false);
+            myParty.name = d.getValue1();
+            myParty.pass = d.getValue2();
+            myParty.enabled = false;
+        }
+        else
+            ui->status_label->setText("Server is busy. Try again later");
     }
 }
 
@@ -662,11 +733,17 @@ void MainWindow::on_leave_party_button_clicked()
     if (myParty.enabled)
     {
         partyService * ps = psa->get();
-        ps->leaveParty(apikey,myParty.name);
-        connect(ps,SIGNAL(leavePartyResponse(nonQueryResult)),this,SLOT(leavePartyResponse(nonQueryResult)));
-        srv["leaveParty"] = ps;
-        this->setEnabled(false);
-        myParty.enabled = false;
+        logger->log(TinyLogger::ERROR, ps == 0 ? "leave Party: ps == NULL!" : "OK");
+        if (ps)
+        {
+            ps->leaveParty(apikey,myParty.name);
+            connect(ps,SIGNAL(leavePartyResponse(nonQueryResult)),this,SLOT(leavePartyResponse(nonQueryResult)));
+            srv["leaveParty"] = ps;
+            this->setEnabled(false);
+            myParty.enabled = false;
+        }
+        else
+            ui->status_label->setText("Server is busy. Try again later");
     }
 }
 
@@ -685,37 +762,49 @@ void MainWindow::on_party_status_returnPressed()
 void MainWindow::on_save_params_button_clicked()
 {
     partyService * ps = psa->get();
-    QString method;
-    if (ui->adaptive_method_box->isChecked())
-        if (ui->list_method_box->isChecked())
-            method = "both";
+    logger->log(TinyLogger::ERROR, ps == 0 ? "saveParams: ps == NULL!" : "OK");
+    if (ps)
+    {
+        QString method;
+        if (ui->adaptive_method_box->isChecked())
+            if (ui->list_method_box->isChecked())
+                method = "both";
+            else
+                method = "adaptive";
         else
-            method = "adaptive";
+            if (ui->list_method_box->isChecked())
+                method = "list";
+            else
+                method = "";
+        ps->setPartyParams(apikey,myParty.name,ui->chat_server->text() + ":"+ui->server_port->text(),
+                           ui->chat_channel->text(),ui->chat_cd->value(),method,
+                           ui->read_before->value(),ui->min_words->value(),ui->max_words->value(),
+                           ui->chat_list_name->currentText(),
+                           ui->emotes_cap_checkbox->isChecked() ? ui->emotes_cap->value() : -1,
+                           !ui->tolower_checkbox->isChecked());
+        connect(ps,SIGNAL(setPartyParamsResponse(nonQueryResult)),this,SLOT(savePartyParamsResponse(nonQueryResult)));
+        srv["save"] = ps;
+        this->setEnabled(false);
+        ui->status_label->setText("Saving Params");
+    }
     else
-        if (ui->list_method_box->isChecked())
-            method = "list";
-        else
-            method = "";
-    ps->setPartyParams(apikey,myParty.name,ui->chat_server->text() + ":"+ui->server_port->text(),
-                       ui->chat_channel->text(),ui->chat_cd->value(),method,
-                       ui->read_before->value(),ui->min_words->value(),ui->max_words->value(),
-                       ui->chat_list_name->currentText(),
-                       ui->emotes_cap_checkbox->isChecked() ? ui->emotes_cap->value() : -1,
-                       !ui->tolower_checkbox->isChecked());
-    connect(ps,SIGNAL(setPartyParamsResponse(nonQueryResult)),this,SLOT(savePartyParamsResponse(nonQueryResult)));
-    srv["save"] = ps;
-    this->setEnabled(false);
-    ui->status_label->setText("Saving Params");
+        ui->status_label->setText("Server is busy. Try again later");
 }
 
 void MainWindow::on_lineEdit_3_returnPressed()
 {
     partyService * ps = psa->get();
-    ps->sendMessage(apikey,myParty.name,ui->lineEdit_3->text());
-    QString html = ui->party_chat->toHtml();
-    html += login + ": " + ui->lineEdit_3->text();
-    ui->party_chat->setHtml(html);
-    ui->lineEdit_3->setText("");
+    logger->log(TinyLogger::ERROR, ps == 0 ? "sendMessage: ps == NULL!" : "OK");
+    if (ps)
+    {
+        ps->sendMessage(apikey,myParty.name,ui->lineEdit_3->text());
+        QString html = ui->party_chat->toHtml();
+        html += login + ": " + ui->lineEdit_3->text();
+        ui->party_chat->setHtml(html);
+        ui->lineEdit_3->setText("");
+    }
+    else
+        ui->status_label->setText("Server is busy. Try again later");
 }
 
 void MainWindow::on_accounts_list_currentItemChanged(QListWidgetItem *current)
@@ -733,7 +822,7 @@ void MainWindow::on_accounts_list_currentItemChanged(QListWidgetItem *current)
 void MainWindow::on_start_attack_button_clicked()
 {
     loadAccounts();
-    QTimer::singleShot(1000,this,SLOT(startAttack()));
+    QTimer::singleShot(1500,this,SLOT(startAttack()));
 }
 
 void MainWindow::on_stop_attack_button_clicked()
@@ -741,7 +830,14 @@ void MainWindow::on_stop_attack_button_clicked()
     if (myParty.enabled && myParty.owner)
     {
         partyService * ps = psa->get();
-        ps->stopParty(apikey,myParty.name);
+        logger->log(TinyLogger::ERROR, ps == 0 ? "stopParty: ps == NULL!" : "OK");
+        if (ps)
+            ps->stopParty(apikey,myParty.name);
+        else
+        {
+            ui->status_label->setText("Server is busy. Try again later");
+            return;
+        }
     }
 
     spamSystem->stop();

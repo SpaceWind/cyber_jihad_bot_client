@@ -10,6 +10,7 @@
 #include "partyservice.h"
 #include "loginpassinputdialog.h"
 #include "spamsystem.h"
+#include "tinylogger.h"
 namespace Ui {
 class MainWindow;
 }
@@ -69,6 +70,8 @@ private slots:
     void sendStatus(QString status, bool ready, QString info);
     void closeEvent(QCloseEvent *event);
 
+    void displayTookServices();
+
 
 
 
@@ -101,6 +104,7 @@ private:
     QTimer partyUpdateTimer;
     SpamSystem * spamSystem;
     QString attackStatus;
+    TinyLogger * logger;
 
 };
 

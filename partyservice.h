@@ -118,6 +118,7 @@ class partyServiceAllocator
 public:
     explicit partyServiceAllocator(QString serverURL, int count);
     partyService *get();
+    int tookCount();
     ~partyServiceAllocator();
 private:
     QVector<partyService*> items;
@@ -158,6 +159,9 @@ public:
     void startParty(QString apikey, QString party);
     void stopParty(QString apikey, QString party);
     void updateParty(QString apikey, QString party);
+
+
+    partyService *take();
 
 signals:
     void loginResponse(loginResult result);
