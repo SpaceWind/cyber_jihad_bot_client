@@ -447,19 +447,43 @@ QTabBar::tab:hover {
            <string>Party</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
-           <item row="2" column="0" colspan="4">
-            <widget class="QTextEdit" name="party_chat">
-             <property name="horizontalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOff</enum>
+           <item row="3" column="0" colspan="4">
+            <widget class="QLineEdit" name="lineEdit_3">
+             <property name="placeholderText">
+              <string>Type your message here</string>
              </property>
-             <property name="documentTitle">
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QPushButton" name="join_party_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="text">
               <string/>
              </property>
-             <property name="readOnly">
-              <bool>true</bool>
+             <property name="icon">
+              <iconset resource="res.qrc">
+               <normaloff>:/join.png</normaloff>:/join.png</iconset>
              </property>
-             <property name="placeholderText">
-              <string>Party Chat...</string>
+             <property name="iconSize">
+              <size>
+               <width>40</width>
+               <height>40</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QCheckBox" name="ready_checkbox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Ready</string>
              </property>
             </widget>
            </item>
@@ -480,29 +504,6 @@ QTabBar::tab:hover {
              <property name="icon">
               <iconset resource="res.qrc">
                <normaloff>:/create.png</normaloff>:/create.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>40</width>
-               <height>40</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="2">
-            <widget class="QPushButton" name="join_party_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="res.qrc">
-               <normaloff>:/join.png</normaloff>:/join.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -538,16 +539,6 @@ QTabBar::tab:hover {
              </property>
             </widget>
            </item>
-           <item row="0" column="3">
-            <widget class="QCheckBox" name="ready_checkbox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Ready</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="0" colspan="4">
             <widget class="QListWidget" name="party_user_list">
              <property name="maximumSize">
@@ -569,10 +560,10 @@ QTabBar::tab:hover {
            <item row="0" column="0" colspan="3">
             <widget class="QLineEdit" name="party_status"/>
            </item>
-           <item row="3" column="0" colspan="4">
-            <widget class="QLineEdit" name="lineEdit_3">
-             <property name="placeholderText">
-              <string>Type your message here</string>
+           <item row="2" column="0" colspan="4">
+            <widget class="QTextBrowser" name="party_chat">
+             <property name="openLinks">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -768,8 +759,8 @@ QTabBar::tab:hover {
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>:/delete.ico</normaloff>:/delete.ico</iconset>
+              <iconset resource="res.qrc">
+               <normaloff>:/delete.png</normaloff>:/delete.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -820,7 +811,6 @@ QTabBar::tab:hover {
   <tabstop>party_status</tabstop>
   <tabstop>ready_checkbox</tabstop>
   <tabstop>party_user_list</tabstop>
-  <tabstop>party_chat</tabstop>
   <tabstop>lineEdit_3</tabstop>
   <tabstop>create_party_button</tabstop>
   <tabstop>join_party_button</tabstop>

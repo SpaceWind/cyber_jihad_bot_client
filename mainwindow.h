@@ -7,6 +7,7 @@
 #include <QList>
 #include <QListWidgetItem>
 #include <QCloseEvent>
+#include <QRegExp>
 #include "partyservice.h"
 #include "loginpassinputdialog.h"
 #include "spamsystem.h"
@@ -32,6 +33,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void setup();
     void loadAccounts();
+    void loadEmotes();
     ~MainWindow();
 
 
@@ -44,6 +46,7 @@ public slots:
 
 
     void loadAccountsResponse(getAccountsResult result);
+    void loadEmotesResponse(emotesListResult result);
     void addAccountResponse(nonQueryResult result);
     void removeAccountResponse(nonQueryResult result);
     void createPartyResponse(nonQueryResult result);
@@ -71,6 +74,10 @@ private slots:
     void closeEvent(QCloseEvent *event);
 
     void displayTookServices();
+    void addMessageToPartyChat(QString sender, QString message);
+
+    void addImageResourceToPartyChat(QNetworkReply *reply);
+    void replaceTagWithImagePartyChat();
 
 
 
@@ -88,6 +95,8 @@ private slots:
     void on_start_attack_button_clicked();
     void on_stop_attack_button_clicked();
 
+    void on_party_chat_anchorClicked(const QUrl &arg1);
+
 private:
     Ui::MainWindow *ui;
     QStringList allAccounts_;
@@ -98,6 +107,8 @@ private:
 
     partyServiceAllocator * psa;
     QHash<QString,partyService*> srv;
+    QHash<QString,QString> emotes;
+    QStringList imgResources;
 
     partyDescriptor myParty;
 
@@ -105,6 +116,7 @@ private:
     SpamSystem * spamSystem;
     QString attackStatus;
     TinyLogger * logger;
+    QString imgMessage;
 
 };
 

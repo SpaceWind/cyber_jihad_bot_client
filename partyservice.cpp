@@ -228,6 +228,15 @@ void partyService::updateParty(QString apikey, QString party)
     isActive_ = false;
 }
 
+void partyService::getEmotes()
+{
+    QHash<QString, QString> params;
+
+    QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(getEmotesServerResponse(QByteArray)));
+    remoteServer_->call("emotes list",params);
+    isActive_ = false;
+}
+
 partyService* partyService::take()
 {
     isActive_ = false;
@@ -608,6 +617,29 @@ void partyService::updatePartyServerResponse(QByteArray response)
     QObject::disconnect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(updatePartyServerResponse(QByteArray)));
     isActive_ = true;
     emit updatePartyResponse(result);
+}
+
+void partyService::getEmotesServerResponse(QByteArray response)
+{
+    emotesListResult result;
+    if (response.indexOf("!!:HTTP") == 0)
+        result.error = true;
+    else
+    {
+        result.error = false;
+        jsonParser parser(response);
+        int count = parser.getInt("count");
+        for (int i=0; i<count; i++)
+        {
+            emotesListResult::emoteDesc emote;
+            emote.txt = parser.first("emotes["+QString::number(i)+"].txt");
+            emote.url = parser.first("emotes["+QString::number(i)+"].url");
+            result.emotes.append(emote);
+        }
+    }
+    QObject::disconnect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(getEmotesServerResponse(QByteArray)));
+    isActive_ = true;
+    emit getEmotesResponse(result);
 }
 
 //GameServer

@@ -109,6 +109,16 @@ struct partyUpdatesResult : public nonQueryResult
     QList<partyUpdate> updates;
 };
 
+struct emotesListResult : public nonQueryResult
+{
+    struct emoteDesc
+    {
+        QString txt;
+        QString url;
+    };
+    QList<emoteDesc> emotes;
+};
+
 
 //----------------------------
 class partyService;
@@ -159,6 +169,7 @@ public:
     void startParty(QString apikey, QString party);
     void stopParty(QString apikey, QString party);
     void updateParty(QString apikey, QString party);
+    void getEmotes();
 
 
     partyService *take();
@@ -181,6 +192,7 @@ signals:
     void startPartyResponse(nonQueryResult result);
     void stopPartyResponse(nonQueryResult result);
     void updatePartyResponse(partyUpdatesResult result);
+    void getEmotesResponse(emotesListResult result);
 private slots:
     void loginServerResponse(QByteArray response);
     void signupServerResponse(QByteArray response);
@@ -199,6 +211,7 @@ private slots:
     void startPartyServerResponse(QByteArray response);
     void stopPartyServerResponse(QByteArray response);
     void updatePartyServerResponse(QByteArray response);
+    void getEmotesServerResponse(QByteArray response);
 private:
     RemoteServer * remoteServer_;
     bool isActive_;
