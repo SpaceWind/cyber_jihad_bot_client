@@ -35,6 +35,7 @@ public:
     void setup();
     void loadAccounts();
     void loadEmotes();
+    void loadTwitchEmotes();
     void setupTextViews();
     ~MainWindow();
 
@@ -56,6 +57,7 @@ public slots:
     void leavePartyResponse(nonQueryResult result);
     void updatePartyResponse(partyUpdatesResult result);
     void savePartyParamsResponse(nonQueryResult result);
+    void loadTwitchEmotesResponse(QNetworkReply* reply);
 
 
     void loadUpdates();

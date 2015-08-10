@@ -53,6 +53,16 @@ void MainWindow::loadEmotes()
         ui->status_label->setText("Server is busy try later");
 }
 
+void MainWindow::loadTwitchEmotes()
+{
+    QUrl url("https://twitchtools.com/emoticons");
+    QNetworkAccessManager * mgr = new QNetworkAccessManager();
+    QNetworkRequest request(url);
+    connect(mgr,SIGNAL(finished(QNetworkReply*)),this,SLOT(loadTwitchEmotesResponse(QNetworkReply*)));
+    mgr->get(request);
+    this->setEnabled(false);
+}
+
 void MainWindow::setupTextViews()
 {
     HashTagLinksPreprocessor * tagPreprocessor = new HashTagLinksPreprocessor();
@@ -73,7 +83,6 @@ void MainWindow::loadAccountsResponse(getAccountsResult result)
 {
     if (srv.contains("getAccounts"))
         disconnect(srv["getAccounts"],SIGNAL(getAccountsResponse(getAccountsResult)),this,SLOT(loadAccountsResponse(getAccountsResult)));
-    this->setEnabled(true);
     if (result.error)
     {
         ui->status_label->setText("CONNECTION UNAVAILABLE!");
@@ -109,14 +118,13 @@ void MainWindow::loadEmotesResponse(emotesListResult result)
 {
     if (srv.contains("loadEmotes"))
         disconnect(srv["loadEmotes"],SIGNAL(getEmotesResponse(emotesListResult)),this,SLOT(loadEmotesResponse(emotesListResult)));
-    this->setEnabled(true);
 
     ui->status_label->setText("OK");
     emotes.clear();
     for (QList<emotesListResult::emoteDesc>::iterator it = result.emotes.begin(); it != result.emotes.end(); ++it)
         emotes[(*it).txt] = (*it).url;
 
-    setupTextViews();
+    loadTwitchEmotes();
 }
 
 void MainWindow::addAccountResponse(nonQueryResult result)
@@ -461,6 +469,35 @@ void MainWindow::savePartyParamsResponse(nonQueryResult result)
         ui->status_label->setText("");
         ui->start_attack_button->setEnabled(true);
     }
+}
+
+void MainWindow::loadTwitchEmotesResponse(QNetworkReply *reply)
+{
+    if (!reply->error())
+    {
+        QString html(reply->readAll());
+        QRegExp urlRx("<img class=\"lazyload\" width=\"28\" height=\"28\" data-src=\"([^\"]*)\"[^>]*(/>|></img>)<span>[\\w]*");
+        int urlPos, txtPos;
+        urlPos = txtPos = 0;
+
+
+        QStringList matchedUrl;
+
+        while ((urlPos = urlRx.indexIn(html, urlPos)) != -1) {
+            matchedUrl << urlRx.cap(0);
+            urlPos += urlRx.matchedLength();
+        }
+        for (int i=0; i<matchedUrl.count(); i++)
+        {
+            QString current = matchedUrl[i];
+            current = current.replace("<img class=\"lazyload\" width=\"28\" height=\"28\" data-src=\"","");
+            current = current.replace("/><span>","");
+            QStringList tokens = current.split(" ");
+            emotes[tokens[1]] = tokens[0].replace("\"","");
+        }
+        setupTextViews();
+    }
+    this->setEnabled(true);
 }
 
 void MainWindow::loadUpdates()
@@ -838,14 +875,14 @@ void MainWindow::on_lineEdit_3_returnPressed()
 {
     if (!myParty.enabled)
         return;
-    QString processedMessage = ui->lineEdit_3->text();
+    QString message = ui->lineEdit_3->text();
 
     partyService * ps = psa->get();
     logger->log(TinyLogger::ERROR, ps == 0 ? "sendMessage: ps == NULL!" : "OK");
     if (ps)
     {
-        ps->sendMessage(apikey,myParty.name,processedMessage);
-        ui->party_chat->addString(login + ": " + processedMessage);
+        ps->sendMessage(apikey,myParty.name,message);
+        ui->party_chat->addString(login + ": " + message);
         ui->lineEdit_3->setText("");
     }
     else

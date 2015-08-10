@@ -237,6 +237,7 @@ void partyService::getEmotes()
     isActive_ = false;
 }
 
+
 partyService* partyService::take()
 {
     isActive_ = false;
