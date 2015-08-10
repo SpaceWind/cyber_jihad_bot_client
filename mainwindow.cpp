@@ -53,6 +53,16 @@ void MainWindow::loadEmotes()
         ui->status_label->setText("Server is busy try later");
 }
 
+void MainWindow::setupTextViews()
+{
+    HashTagLinksPreprocessor * tagPreprocessor = new HashTagLinksPreprocessor();
+    EmotesPreprocessor * tagEmotesPreprocessor = new EmotesPreprocessor(emotes,tagPreprocessor);
+    EmotesPreprocessor * emotesPreprocessor = new EmotesPreprocessor(emotes);
+
+    ui->party_chat->setPreprocessor(tagEmotesPreprocessor);
+    ui->channel_chat->setPreprocessor(emotesPreprocessor);
+}
+
 
 MainWindow::~MainWindow()
 {
@@ -105,6 +115,8 @@ void MainWindow::loadEmotesResponse(emotesListResult result)
     emotes.clear();
     for (QList<emotesListResult::emoteDesc>::iterator it = result.emotes.begin(); it != result.emotes.end(); ++it)
         emotes[(*it).txt] = (*it).url;
+
+    setupTextViews();
 }
 
 void MainWindow::addAccountResponse(nonQueryResult result)
@@ -424,7 +436,7 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
             }
             else if (pu.update_type == "message")
             {
-                addMessageToPartyChat(pu.nick,pu.message_text);
+                ui->party_chat->addString(pu.nick + ": " + pu.message_text);
             }
         }
     }
@@ -494,7 +506,7 @@ void MainWindow::startAttack()
 
     logger->log(TinyLogger::DEBUG, "starting spam system");
     spamSystem = new SpamSystem(ui->chat_server->text(),ui->server_port->text().toInt(),ui->chat_channel->text(),
-                                myAccounts_,allAccounts_,banned,messageList,ui->chat_text,
+                                myAccounts_,allAccounts_,banned,messageList,ui->channel_chat,
                                 ui->min_words->value(),ui->max_words->value(),
                                 ui->emotes_cap_checkbox->isChecked(),ui->emotes_cap->value(),
                                 ui->tolower_checkbox->isChecked(),ui->chat_cd->value(),
@@ -635,87 +647,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::displayTookServices()
 {
     ui->status_label->setText(QString::number(psa->tookCount()));
-}
-
-
-void MainWindow::addMessageToPartyChat(QString sender, QString message)
-{
-    QStringList parsedResources;
-    int pos = 0;
-    QRegExp rx("\\[img:http:\\/\\/[A-Za-z0-9_.\\/\\-]*\\]");
-    bool newResource=false;
-    while (rx.indexIn(message,pos) != -1)
-    {
-        QString res = rx.capturedTexts()[0];
-        if (!imgResources.contains(res) && !parsedResources.contains(res))
-        {
-            newResource = true;
-            parsedResources.append(res);
-            QString parsedTag = res;
-            parsedTag = res.replace("[img:","").replace("]","");
-            QUrl url(parsedTag);
-            QNetworkRequest request(url);
-            QNetworkAccessManager * manager = new QNetworkAccessManager();
-            manager->get(request);
-            connect(manager,SIGNAL(finished(QNetworkReply*)),this,SLOT(addImageResourceToPartyChat(QNetworkReply*)));
-        }
-        pos += rx.matchedLength();
-    }
-    ui->party_chat->setHtml(ui->party_chat->toHtml() + sender + ": " + message);
-    if (!newResource)
-        replaceTagWithImagePartyChat();
-}
-
-void MainWindow::addImageResourceToPartyChat(QNetworkReply *reply)
-{
-    if (reply->error() != QNetworkReply::NoError)
-        return;
-    QByteArray imgData = reply->readAll();
-    QPixmap pixmap;
-    pixmap.loadFromData(imgData);
-    QImage img = pixmap.toImage();
-    QTextDocument * doc = ui->party_chat->document();
-    QString tag = "[img:"+reply->url().toString()+"]";
-    doc->addResource(QTextDocument::ImageResource,tag,QVariant(img));
-    QString html = ui->party_chat->toHtml();
-    QString imgTag = "<img src=\"" + tag+"\"></img>";
-    html.replace(tag,imgTag);
-    ui->party_chat->setHtml(html);
-    imgResources.append(tag);
-
-    QScrollBar * sb = ui->party_chat->verticalScrollBar();
-    sb->setValue(sb->maximum());
-}
-
-void MainWindow::replaceTagWithImagePartyChat()
-{
-    QString html = ui->party_chat->toHtml();
-    bool touched = false;
-    for (QStringList::iterator it = imgResources.begin(); it != imgResources.end(); ++it)
-    {
-        int pos =0;
-        while (html.indexOf(*it,pos) != -1)
-        {
-            int i = html.indexOf(*it,pos);
-            if (i != -1)
-                if (i>5)
-                {
-                    QString before = html.mid(i-5,3);
-                    if (before != "src")
-                    {
-                        touched = true;
-                        html.replace(html.indexOf((*it),pos),(*it).length(),"<img src=\"" + (*it) + "\"></img>");
-                        //html = html.replace((*it),"<img src=\""+(*it)+"\"></img>",);
-                    }
-                }
-            pos = i + (*it).length();
-        }
-    }
-    if (touched)
-        ui->party_chat->setHtml(html);
-
-    QScrollBar * sb = ui->party_chat->verticalScrollBar();
-    sb->setValue(sb->maximum());
 }
 
 //add Account button
@@ -908,47 +839,13 @@ void MainWindow::on_lineEdit_3_returnPressed()
     if (!myParty.enabled)
         return;
     QString processedMessage = ui->lineEdit_3->text();
-    //#[\\w]*\\b
-    //\\[img:http:\\/\\/[A-Za-z0-9_.\\/]*(jpg|jpeg|png|PNG|JPG)\\]
-    QRegExp regex("#[\\w@]*\\b");
-    int pos = 0;
-    QStringList channelLinks;
-    while(regex.indexIn(processedMessage,pos) != -1)
-    {
-        if (!channelLinks.contains(regex.capturedTexts()[0]))
-        {
-            channelLinks.append(regex.capturedTexts()[0]);
-            QString lastItem = channelLinks.last();
-            lastItem.replace("#","");
-            if (lastItem.indexOf("@") == 0)
-            {
-                QString pureLink = lastItem;
-                pureLink.replace("@","");
-                processedMessage.replace(channelLinks.last(),"<a href=\""+lastItem+"\">"+lastItem + "</a> (<a href=\""
-                                         + pureLink +"\">switch</a>)");
-            }
-            else
-                processedMessage.replace(channelLinks.last(),"<a href=\""+lastItem+"\">"+lastItem + "</a>");
-        }
-        pos += regex.matchedLength();
-    }
-
-    QStringList messageWords = processedMessage.split(" ");
-    for (QStringList::iterator it = messageWords.begin(); it != messageWords.end(); ++it)
-        if (emotes.contains((*it)))
-            (*it) = "[img:" + emotes[(*it)] + "]";
-    processedMessage = "";
-    for (QStringList::iterator it = messageWords.begin(); it != messageWords.end(); ++it)
-        processedMessage += (*it) + " ";
-    processedMessage = processedMessage.simplified();
-
 
     partyService * ps = psa->get();
     logger->log(TinyLogger::ERROR, ps == 0 ? "sendMessage: ps == NULL!" : "OK");
     if (ps)
     {
         ps->sendMessage(apikey,myParty.name,processedMessage);
-        addMessageToPartyChat(login,processedMessage);
+        ui->party_chat->addString(login + ": " + processedMessage);
         ui->lineEdit_3->setText("");
     }
     else

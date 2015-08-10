@@ -426,11 +426,7 @@ QTabBar::tab:hover {
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0">
-            <widget class="QTextEdit" name="chat_text">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <widget class="ImageTextBrowser" name="channel_chat"/>
            </item>
           </layout>
          </widget>
@@ -561,7 +557,7 @@ QTabBar::tab:hover {
             <widget class="QLineEdit" name="party_status"/>
            </item>
            <item row="2" column="0" colspan="4">
-            <widget class="QTextBrowser" name="party_chat">
+            <widget class="ImageTextBrowser" name="party_chat">
              <property name="openLinks">
               <bool>false</bool>
              </property>
@@ -807,6 +803,13 @@ QTabBar::tab:hover {
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ImageTextBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header location="global">imagetextbrowser.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>party_status</tabstop>
   <tabstop>ready_checkbox</tabstop>
@@ -830,7 +833,6 @@ QTabBar::tab:hover {
   <tabstop>save_params_button</tabstop>
   <tabstop>start_attack_button</tabstop>
   <tabstop>stop_attack_button</tabstop>
-  <tabstop>chat_text</tabstop>
   <tabstop>tabWidget</tabstop>
  </tabstops>
  <resources>

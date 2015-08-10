@@ -1,6 +1,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "spamsystem.h"
+#include "imagetextbrowser.h"
 
 IrcPrivMessageParser IrcPrivMessageParser::parse(QString message)
 {
@@ -120,7 +121,10 @@ void GrabMessageIrcSocket::parseMessage()
             if (!spambots_->contains(message.nickname))
             {
                 if (textEdit_)
-                    textEdit_->append(message.nickname + ": " + message.message.simplified());
+                {
+                    ImageTextBrowser * itb = static_cast<ImageTextBrowser*>(textEdit_);
+                    itb->addString(message.nickname + ": " + message.message.simplified());
+                }
                 QStringList wordsInMessage = message.message.split(" ");
                 QString wordToAdd;
                 foreach (const QString& str, wordsInMessage)

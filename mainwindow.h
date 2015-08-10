@@ -12,6 +12,7 @@
 #include "loginpassinputdialog.h"
 #include "spamsystem.h"
 #include "tinylogger.h"
+#include "messagepreprocessors.h"
 namespace Ui {
 class MainWindow;
 }
@@ -34,6 +35,7 @@ public:
     void setup();
     void loadAccounts();
     void loadEmotes();
+    void setupTextViews();
     ~MainWindow();
 
 
@@ -74,12 +76,6 @@ private slots:
     void closeEvent(QCloseEvent *event);
 
     void displayTookServices();
-    void addMessageToPartyChat(QString sender, QString message);
-
-    void addImageResourceToPartyChat(QNetworkReply *reply);
-    void replaceTagWithImagePartyChat();
-
-
 
 
     void on_pushButton_11_clicked();

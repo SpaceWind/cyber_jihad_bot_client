@@ -19,7 +19,9 @@ SOURCES += main.cpp\
     jsonparser.cpp \
     spamsystem.cpp \
     loginpassinputdialog.cpp \
-    tinylogger.cpp
+    tinylogger.cpp \
+    imagetextbrowser.cpp \
+    messagepreprocessors.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
@@ -27,7 +29,9 @@ HEADERS  += mainwindow.h \
     jsonparser.h \
     spamsystem.h \
     loginpassinputdialog.h \
-    tinylogger.h
+    tinylogger.h \
+    imagetextbrowser.h \
+    messagepreprocessors.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \
