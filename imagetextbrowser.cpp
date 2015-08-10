@@ -49,6 +49,8 @@ void ImageTextBrowser::requestFinished(QNetworkReply * result)
         QTextDocument *doc = this->document();
         doc->addResource(QTextDocument::ImageResource,result->url(),QVariant(img));
         setHtml(toHtml());
+        QScrollBar * vBar = this->verticalScrollBar();
+        vBar->setValue(vBar->maximum());
     }
 }
 
