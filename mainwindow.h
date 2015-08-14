@@ -26,6 +26,16 @@ struct partyDescriptor
     QList<QString> members;
 };
 
+struct chatHistory
+{
+    QString toString() {return sender + " ::: " + message + ":::" + QString::number(score) + date;}
+    static chatHistory fromString(QString s);
+    QString sender;
+    QString message;
+    QString date;
+    int score;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -64,6 +74,8 @@ public slots:
     void startAttack();
     void leavePartyOnExit();
     void applicationExit();
+
+    void saveToHistory(QString sender, QString message);
 private slots:
     void connectingState(int max);
     void readingState(int max);
@@ -98,6 +110,8 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QStringList allAccounts_;
+    QStringList users_;
+    QList<chatHistory> history_;
     QList<getAccountsResult::spamAccountDescriptor> myAccounts_;
     QList<getBannedResult::spamAccountBan> banned_;
     QStringList words_;
@@ -115,6 +129,9 @@ private:
     QString attackStatus;
     TinyLogger * logger;
     QString imgMessage;
+
+    QString server_, port_;
+    bool startupBean;
 
 };
 

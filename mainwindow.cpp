@@ -1,7 +1,19 @@
 #include <QScrollBar>
 #include <QDesktopServices>
+#include <QDir>
+#include <QFileInfo>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+bool fileExists(QString path) {
+    QFileInfo checkFile(path);
+    // check if file exists and if yes: Is it really a file and no directory?
+    if (checkFile.exists() && checkFile.isFile()) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -10,6 +22,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",100);
     logger = new TinyLogger("log.txt",this);
+    server_ = "irc.twitch.tv";
+    port_ = "6667";
+    startupBean = true;
 }
 
 void MainWindow::setup()
@@ -55,12 +70,34 @@ void MainWindow::loadEmotes()
 
 void MainWindow::loadTwitchEmotes()
 {
-    QUrl url("https://twitchtools.com/emoticons");
-    QNetworkAccessManager * mgr = new QNetworkAccessManager();
-    QNetworkRequest request(url);
-    connect(mgr,SIGNAL(finished(QNetworkReply*)),this,SLOT(loadTwitchEmotesResponse(QNetworkReply*)));
-    mgr->get(request);
-    this->setEnabled(false);
+    if (fileExists("emotes.dat"))
+    {
+        QFile file("emotes.dat");
+        file.open(QFile::ReadOnly);
+        QString s(qUncompress(file.readAll()));
+        QStringList items = s.split("\n");
+        foreach (const QString& it,items)
+        {
+            if (it != "")
+            {
+                QStringList tokens = it.split(":::");
+                emotes[tokens[0]] = tokens[1];
+            }
+        }
+        file.close();
+        setupTextViews();
+        this->setEnabled(true);
+    }
+    else
+    {
+        QUrl url("https://twitchtools.com/emoticons");
+        QNetworkAccessManager * mgr = new QNetworkAccessManager();
+        QNetworkRequest request(url);
+        connect(mgr,SIGNAL(finished(QNetworkReply*)),this,SLOT(loadTwitchEmotesResponse(QNetworkReply*)));
+        mgr->get(request);
+        this->setEnabled(false);
+    }
+    startupBean = false;
 }
 
 void MainWindow::setupTextViews()
@@ -83,6 +120,8 @@ void MainWindow::loadAccountsResponse(getAccountsResult result)
 {
     if (srv.contains("getAccounts"))
         disconnect(srv["getAccounts"],SIGNAL(getAccountsResponse(getAccountsResult)),this,SLOT(loadAccountsResponse(getAccountsResult)));
+    if (!startupBean)
+        this->setEnabled(true);
     if (result.error)
     {
         ui->status_label->setText("CONNECTION UNAVAILABLE!");
@@ -230,8 +269,8 @@ void MainWindow::joinPartyResponse(joinPartyResult result)
         {
             joinPartyResult::partyParams pp = result.params.first();
             QStringList serverTokens = pp.server.split(":");
-            ui->chat_server->setText(serverTokens.at(0));
-            ui->server_port->setText(serverTokens.at(1));
+            server_ = serverTokens.at(0);
+            port_ = serverTokens.at(1);
             ui->tolower_checkbox->setChecked(pp.caps != "true");
             ui->chat_channel->setText(pp.channel);
             ui->emotes_cap->setValue(pp.max_emotes);
@@ -273,7 +312,7 @@ void MainWindow::joinPartyResponse(joinPartyResult result)
         ui->ready_checkbox->setEnabled(true);
         ui->create_party_button->setEnabled(false);
         ui->join_party_button->setEnabled(false);
-        partyUpdateTimer.start(2000);
+        partyUpdateTimer.start(3000);
     }
 }
 
@@ -380,9 +419,9 @@ void MainWindow::updatePartyResponse(partyUpdatesResult result)
             else if (pu.update_type == "params" && !myParty.owner)
             {
                 QStringList serverTokens = pu.server.split(":");
-                ui->chat_server->setText(serverTokens.at(0));
+                server_ = serverTokens[0];
+                port_ = serverTokens[1];
                 ui->chat_cd->setValue(pu.cd);
-                ui->server_port->setText(serverTokens.at(1));
                 ui->tolower_checkbox->setChecked(pu.caps != "true");
                 ui->chat_channel->setText(pu.channel);
                 ui->emotes_cap->setValue(pu.max_emotes);
@@ -482,6 +521,10 @@ void MainWindow::loadTwitchEmotesResponse(QNetworkReply *reply)
 
 
         QStringList matchedUrl;
+        QFile emotesFile("emotes.dat");
+        emotesFile.open(QFile::WriteOnly);
+        QByteArray data;
+        QString txtData;
 
         while ((urlPos = urlRx.indexIn(html, urlPos)) != -1) {
             matchedUrl << urlRx.cap(0);
@@ -494,7 +537,12 @@ void MainWindow::loadTwitchEmotesResponse(QNetworkReply *reply)
             current = current.replace("/><span>","");
             QStringList tokens = current.split(" ");
             emotes[tokens[1]] = tokens[0].replace("\"","");
+            txtData += tokens[1] + ":::" + tokens[0].replace("\"","") + "\n";
         }
+        data = data.fromStdString(txtData.toStdString());
+        data = qCompress(data);
+        emotesFile.write(data);
+        emotesFile.close();
         setupTextViews();
     }
     this->setEnabled(true);
@@ -533,16 +581,12 @@ void MainWindow::startAttack()
         if ((*it).channel == ui->chat_channel->text())
             banned.append((*it).login);
     QStringList messageList;
-    int messageCap;
-    if (ui->message_count_cap_checkbox->isChecked())
-        messageCap = ui->message_count_cap->value();
-    else
-        messageCap = std::numeric_limits<int>::max();
+    int messageCap = std::numeric_limits<int>::max();
     if (spamSystem)
         delete spamSystem;
 
     logger->log(TinyLogger::DEBUG, "starting spam system");
-    spamSystem = new SpamSystem(ui->chat_server->text(),ui->server_port->text().toInt(),ui->chat_channel->text(),
+    spamSystem = new SpamSystem(server_,port_.toInt(),ui->chat_channel->text(),
                                 myAccounts_,allAccounts_,banned,messageList,ui->channel_chat,
                                 ui->min_words->value(),ui->max_words->value(),
                                 ui->emotes_cap_checkbox->isChecked(),ui->emotes_cap->value(),
@@ -598,6 +642,13 @@ void MainWindow::leavePartyOnExit()
 void MainWindow::applicationExit()
 {
     qApp->exit();
+}
+
+void MainWindow::saveToHistory(QString sender, QString message)
+{
+    chatHistory h;
+    h.sender = sender;
+    h.message = message;
 }
 
 void MainWindow::connectingState(int max)
@@ -856,7 +907,7 @@ void MainWindow::on_save_params_button_clicked()
                 method = "list";
             else
                 method = "";
-        ps->setPartyParams(apikey,myParty.name,ui->chat_server->text() + ":"+ui->server_port->text(),
+        ps->setPartyParams(apikey,myParty.name,server_ + ":" + port_,
                            ui->chat_channel->text(),ui->chat_cd->value(),method,
                            ui->read_before->value(),ui->min_words->value(),ui->max_words->value(),
                            ui->chat_list_name->currentText(),
@@ -905,12 +956,16 @@ void MainWindow::on_start_attack_button_clicked()
 {
     loadAccounts();
     QTimer::singleShot(1500,this,SLOT(startAttack()));
+    ui->save_params_button->setEnabled(false);
+    ui->join_party_button->setEnabled(false);
+    ui->create_party_button->setEnabled(false);
 }
 
 void MainWindow::on_stop_attack_button_clicked()
 {
     if (myParty.enabled && myParty.owner)
     {
+        ui->save_params_button->setEnabled(true);
         partyService * ps = psa->get();
         logger->log(TinyLogger::ERROR, ps == 0 ? "stopParty: ps == NULL!" : "OK");
         if (ps)
@@ -921,6 +976,12 @@ void MainWindow::on_stop_attack_button_clicked()
             return;
         }
     }
+    if (!myParty.enabled)
+    {
+        ui->join_party_button->setEnabled(true);
+        if (admin)
+            ui->create_party_button->setEnabled(true);
+    }
 
     spamSystem->stop();
     ui->stop_attack_button->setEnabled(false);
@@ -928,7 +989,6 @@ void MainWindow::on_stop_attack_button_clicked()
     if (!myParty.enabled)
     {
         ui->pushButton_11->setEnabled(true);
-        ui->pushButton_12->setEnabled(true);
     }
     ui->messages_list->clear();
     ui->attack_status->setText("Ready for a next attack!");
@@ -944,4 +1004,16 @@ void MainWindow::on_party_chat_anchorClicked(const QUrl &arg1)
     if ((myParty.enabled && myParty.owner) || !myParty.enabled)
         ui->chat_channel->setText(arg1.toString());
 
+}
+
+
+chatHistory chatHistory::fromString(QString s)
+{
+    chatHistory result;
+    QStringList tokens = s.split(":::");
+    result.sender = tokens[0];
+    result.message = tokens[1];
+    result.score = tokens[2].toInt();
+    result.date = tokens[3];
+    return result;
 }

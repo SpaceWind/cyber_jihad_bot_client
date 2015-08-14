@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     loginpassinputdialog.cpp \
     tinylogger.cpp \
     imagetextbrowser.cpp \
-    messagepreprocessors.cpp
+    messagepreprocessors.cpp \
+    joinroomdialog.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
@@ -31,11 +32,13 @@ HEADERS  += mainwindow.h \
     loginpassinputdialog.h \
     tinylogger.h \
     imagetextbrowser.h \
-    messagepreprocessors.h
+    messagepreprocessors.h \
+    joinroomdialog.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \
-    loginpassinputdialog.ui
+    loginpassinputdialog.ui \
+    joinroomdialog.ui
 
 RESOURCES += \
     res.qrc
