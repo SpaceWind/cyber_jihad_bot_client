@@ -13,6 +13,7 @@
 #include "spamsystem.h"
 #include "tinylogger.h"
 #include "messagepreprocessors.h"
+#include "spamconfig.h"
 namespace Ui {
 class MainWindow;
 }
@@ -53,6 +54,7 @@ public:
 
     QString apikey, login;
     bool admin;
+    SpamConfig config;
 
 
 public slots:
@@ -106,6 +108,14 @@ private slots:
     void on_stop_attack_button_clicked();
 
     void on_party_chat_anchorClicked(const QUrl &arg1);
+
+    void on_auto_login_clicked(bool checked);
+
+    void on_send_banned_clicked(bool checked);
+
+    void on_hello_message_count_editingFinished();
+
+    void on_Steal_coockies_fake_clicked();
 
 private:
     Ui::MainWindow *ui;

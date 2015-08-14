@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     tinylogger.cpp \
     imagetextbrowser.cpp \
     messagepreprocessors.cpp \
-    joinroomdialog.cpp
+    joinroomdialog.cpp \
+    spamconfig.cpp
 
 HEADERS  += mainwindow.h \
     loginwindow.h \
@@ -33,7 +34,8 @@ HEADERS  += mainwindow.h \
     tinylogger.h \
     imagetextbrowser.h \
     messagepreprocessors.h \
-    joinroomdialog.h
+    joinroomdialog.h \
+    spamconfig.h
 
 FORMS    += mainwindow.ui \
     loginwindow.ui \

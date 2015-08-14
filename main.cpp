@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
         mw.apikey = w.getApikey();
         mw.login = w.getLogin();
         mw.admin = w.isAdmin();
+        mw.config = w.getConfig();
         mw.setup();
         return a.exec();
     }

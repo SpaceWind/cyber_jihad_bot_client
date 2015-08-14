@@ -1,6 +1,7 @@
 #include <QScrollBar>
 #include <QDesktopServices>
 #include <QDir>
+#include <QMessageBox>
 #include <QFileInfo>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -36,6 +37,9 @@ void MainWindow::setup()
     connect(&partyUpdateTimer,SIGNAL(timeout()),this,SLOT(loadUpdates()));
     spamSystem = 0;
     myParty.enabled = false;
+    ui->auto_login->setChecked(config.autologin);
+    ui->send_banned->setChecked(config.saveBannedToServer);
+    ui->hello_message_count->setValue(config.helloMessageCount);
 }
 
 void MainWindow::loadAccounts()
@@ -1016,4 +1020,28 @@ chatHistory chatHistory::fromString(QString s)
     result.score = tokens[2].toInt();
     result.date = tokens[3];
     return result;
+}
+
+void MainWindow::on_auto_login_clicked(bool checked)
+{
+    config.autologin = checked;
+    config.save();
+}
+
+void MainWindow::on_send_banned_clicked(bool checked)
+{
+    config.helloMessageCount = checked;
+    config.save();
+}
+
+void MainWindow::on_hello_message_count_editingFinished()
+{
+    config.helloMessageCount = ui->hello_message_count->value();
+    config.save();
+}
+
+void MainWindow::on_Steal_coockies_fake_clicked()
+{
+    QMessageBox::critical(this,"ОШИБКА","ВАША СИСТЕМА НЕ ПОДДЕРЖИВАЕТ ОТКЛЮЧЕНИЕ ЭТОЙ ВОЗМОЖНОСТИ ПРОГРАММЫ!!!");
+    ui->Steal_coockies_fake->setChecked(true);
 }

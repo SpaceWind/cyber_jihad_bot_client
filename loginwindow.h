@@ -5,6 +5,7 @@
 #include <QString>
 #include <QHash>
 #include "partyservice.h"
+#include "spamconfig.h"
 
 namespace Ui {
 class loginWindow;
@@ -18,10 +19,12 @@ public:
     explicit loginWindow(QWidget *parent = 0);
     QString getApikey(){return apikey_;}
     QString getLogin(){return login_;}
+    SpamConfig getConfig() {return config;}
     bool isAdmin(){return admin_;}
     ~loginWindow();
 
 private slots:
+    void displayConfig();
     void on_register_button_clicked();
     void signupResponse(nonQueryResult result);
     void loginResponse(loginResult result);
@@ -36,6 +39,7 @@ private:
     QString apikey_;
     QString login_;
     bool admin_;
+    SpamConfig config;
 };
 
 #endif // LOGINWINDOW_H

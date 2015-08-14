@@ -6,13 +6,29 @@ loginWindow::loginWindow(QWidget *parent) :
     QDialog(parent,Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
     ui(new Ui::loginWindow)
 {
-    ui->setupUi(this);
+
     psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",2);
+    config.load();
+    if (config.autologin)
+        this->setWindowOpacity(0);
+    QTimer::singleShot(500,this, SLOT(displayConfig()));
+    ui->setupUi(this);
 }
 
 loginWindow::~loginWindow()
 {
     delete ui;
+}
+
+void loginWindow::displayConfig()
+{
+
+    this->setEnabled(false);
+    ui->login_login->setText(config.login);
+    ui->login_pass->setText(config.pass);
+    ui->login_button->setFocus();
+    if (config.autologin)
+        on_login_button_clicked();
 }
 
 void loginWindow::on_register_button_clicked()
@@ -52,17 +68,20 @@ void loginWindow::signupResponse(nonQueryResult result)
 
 void loginWindow::loginResponse(loginResult result)
 {
+    setEnabled(true);
     if (srv.contains("login"))
         disconnect(srv["login"],SIGNAL(loginResponse(loginResult)),this,SLOT(loginResponse(loginResult)));
     ui->login_button->setEnabled(true);
     if (result.error)
     {
         ui->status_label->setText("CONNECTION UNAVAILABLE");
+        this->setWindowOpacity(1);
         return;
     }
     if (!result.success)
     {
         ui->status_label->setText("Error: " + result.status);
+        this->setWindowOpacity(1);
     }
     else
     {
@@ -70,6 +89,9 @@ void loginWindow::loginResponse(loginResult result)
         apikey_ = result.apikey;
         admin_ = result.group == "admins";
         login_ = ui->login_login->text();
+        config.login = ui->login_login->text();
+        config.pass = ui->login_pass->text();
+        config.save();
         this->accept();
     }
 }
