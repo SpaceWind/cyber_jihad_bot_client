@@ -70,6 +70,7 @@ public slots:
     void updatePartyResponse(partyUpdatesResult result);
     void savePartyParamsResponse(nonQueryResult result);
     void loadTwitchEmotesResponse(QNetworkReply* reply);
+    void getInviteResponse(invitesResult result);
 
 
     void loadUpdates();
@@ -116,6 +117,8 @@ private slots:
     void on_hello_message_count_editingFinished();
 
     void on_Steal_coockies_fake_clicked();
+
+    void on_get_invite_button_clicked();
 
 private:
     Ui::MainWindow *ui;

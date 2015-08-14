@@ -552,6 +552,24 @@ void MainWindow::loadTwitchEmotesResponse(QNetworkReply *reply)
     this->setEnabled(true);
 }
 
+void MainWindow::getInviteResponse(invitesResult result)
+{
+    ui->get_invite_button->setEnabled(true);
+    if (result.error)
+    {
+        ui->status_label->setText("CONNECTION UNAVAILABLE");
+        return;
+    }
+    if (!result.success)
+    {
+        ui->status_label->setText("Unable to get invites: " + result.status);
+    }
+    else
+    {
+        ui->invite_line_edit->setText(result.invite);
+    }
+}
+
 void MainWindow::loadUpdates()
 {
     partyService * ps = psa->get();
@@ -1030,7 +1048,7 @@ void MainWindow::on_auto_login_clicked(bool checked)
 
 void MainWindow::on_send_banned_clicked(bool checked)
 {
-    config.helloMessageCount = checked;
+    config.saveBannedToServer = checked;
     config.save();
 }
 
@@ -1044,4 +1062,13 @@ void MainWindow::on_Steal_coockies_fake_clicked()
 {
     QMessageBox::critical(this,"ОШИБКА","ВАША СИСТЕМА НЕ ПОДДЕРЖИВАЕТ ОТКЛЮЧЕНИЕ ЭТОЙ ВОЗМОЖНОСТИ ПРОГРАММЫ!!!");
     ui->Steal_coockies_fake->setChecked(true);
+}
+
+
+void MainWindow::on_get_invite_button_clicked()
+{
+    partyService * ps = psa->get();
+    ps->getInvite(apikey);
+    connect(ps,SIGNAL(getInviteResponse(invitesResult)),this, SLOT(getInviteResponse(invitesResult)));
+    ui->get_invite_button->setEnabled(false);
 }

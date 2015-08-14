@@ -237,10 +237,30 @@ void partyService::getEmotes()
     isActive_ = false;
 }
 
+void partyService::makeAdmin(QString apikey, QString login)
+{
+    QHash<QString,QString> params;
+    params["apikey"] = apikey;
+    params["login"] = login;
+    QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(makeAdminServerResponse(QByteArray)));
+    remoteServer_->call("admin promote",params);
+    isActive_ = false;
+}
+
+void partyService::getInvite(QString apikey)
+{
+    QHash<QString,QString> params;
+    params["apikey"] = apikey;
+    QObject::connect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(getInviteServerResponse(QByteArray)));
+    remoteServer_->call("invites",params);
+    isActive_ = false;
+}
+
 
 partyService* partyService::take()
 {
     isActive_ = false;
+    QObject::disconnect(this);
     return this;
 }
 
@@ -641,6 +661,45 @@ void partyService::getEmotesServerResponse(QByteArray response)
     QObject::disconnect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(getEmotesServerResponse(QByteArray)));
     isActive_ = true;
     emit getEmotesResponse(result);
+}
+
+void partyService::makeAdminServerResponse(QByteArray response)
+{
+    nonQueryResult result;
+    if (response.indexOf("!!:HTTP") == 0)
+        result.error = true;
+    else
+    {
+        result.error = false;
+        jsonParser parser(response);
+        result.success = parser.getBool("success");
+        result.status = parser.first("status");
+    }
+    QObject::disconnect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(makeAdminServerResponse(QByteArray)));
+    isActive_ = true;
+    emit makeAdminResponse(result);
+}
+
+void partyService::getInviteServerResponse(QByteArray response)
+{
+    invitesResult result;
+    if (response.indexOf("!!:HTTP") == 0)
+        result.error = true;
+    else
+    {
+        result.error = false;
+        jsonParser parser(response);
+        result.success = parser.getBool("success");
+        result.status = parser.first("status");
+        if (result.success)
+        {
+            int count = parser.getInt("count");
+            result.invite = parser.first("invites["+QString::number(count-1)+"].data");
+        }
+    }
+    QObject::disconnect(remoteServer_,SIGNAL(callFinished(QByteArray)),this,SLOT(getInviteServerResponse(QByteArray)));
+    isActive_ = true;
+    emit getInviteResponse(result);
 }
 
 //GameServer

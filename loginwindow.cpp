@@ -10,7 +10,10 @@ loginWindow::loginWindow(QWidget *parent) :
     psa = new partyServiceAllocator("http://cyberjihad-bot.herokuapp.com",2);
     config.load();
     if (config.autologin)
+    {
         this->setWindowOpacity(0);
+        this->setEnabled(false);
+    }
     QTimer::singleShot(500,this, SLOT(displayConfig()));
     ui->setupUi(this);
 }
@@ -23,7 +26,6 @@ loginWindow::~loginWindow()
 void loginWindow::displayConfig()
 {
 
-    this->setEnabled(false);
     ui->login_login->setText(config.login);
     ui->login_pass->setText(config.pass);
     ui->login_button->setFocus();
