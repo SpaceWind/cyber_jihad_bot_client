@@ -99,7 +99,7 @@ class SpamMessageSocket : public AbstractIrcSocket
 public:
     explicit SpamMessageSocket(QObject *parent = 0);
     explicit SpamMessageSocket(QString host, int port, QString channel, QString nickname, QString pass,
-                               QStringList* words, int minWords, int maxWords,
+                               QStringList* words, QHash<QString,QString>* emotes, int minWords, int maxWords,
                                bool emotesCap=false, int emotesCount=0, bool toLower = false);
     void sendMessage();
 
@@ -110,11 +110,11 @@ public slots:
 protected:
     QString preProcessMessage(QString str);
     void setupTwitchEmotes();
-    QStringList twitchEmotes;
 
     bool emotesCap_;
     int emotesCapValue_;
     bool toLower_;
+    QHash<QString,QString>* emotes_;
 };
 
 struct SpamParams
@@ -145,7 +145,7 @@ class SpamSystem : public QObject
     Q_OBJECT
 public:
     SpamSystem(QString host, int port, QString channel, QList<getAccountsResult::spamAccountDescriptor>& myAccounts,
-               QStringList& allAccounts, QStringList& bannedAccounts, QStringList& messageList, QTextEdit * out,
+               QStringList& allAccounts, QStringList& bannedAccounts, QStringList& messageList, QTextEdit * out, QHash<QString, QString> *emotes,
                int minWords, int maxWords, bool emotesCap, int emotesCount, bool toLower, int cd, int maxMessages, int beforeAttack);
     ~SpamSystem();
     enum spamState {IDLE, CONNECTING, READING, GREETINGS, SPAMMING};
@@ -193,6 +193,7 @@ private:
     spamState state;
     QString grabberLogin;
     QHash<QString,QTime> spamCommits;
+    QHash<QString,QString>* emotes_;
     int socketConnectedCount;
     int grabberMessageReadCount;
 };

@@ -130,14 +130,16 @@ void GrabMessageIrcSocket::parseMessage()
                 foreach (const QString& str, wordsInMessage)
                 {
                     wordToAdd += (" " + str);
-                    //30% chance that "word" will be a sentence of two words
+                    //20% chance that "word" will be a sentence of two words
                     //4% chance that "word" will be a sentence of three words
                     //1% of four words
                     //etc
+                    if (wordToAdd.simplified() == "")
+                        continue;
                     int randomInt = rand()%100;
                     if (randomInt < 80)
                     {
-                        if (!words_->contains(wordToAdd,Qt::CaseInsensitive))
+                        if (!words_->contains(wordToAdd,Qt::CaseInsensitive) )
                         {
                             words_->append(wordToAdd.replace("\r\n",""));
                             emit wordAdded(wordToAdd.replace("\r\n",""));
@@ -173,7 +175,7 @@ SpamMessageSocket::SpamMessageSocket(QObject *parent) :
 }
 
 SpamMessageSocket::SpamMessageSocket(QString host, int port, QString channel, QString nickname, QString pass,
-                                     QStringList *words, int minWords, int maxWords,
+                                     QStringList *words,QHash<QString,QString>* emotes, int minWords, int maxWords,
                                      bool emotesCap, int emotesCount, bool toLower) :
                                      AbstractIrcSocket(host, port,channel,nickname,pass,words)
 
@@ -183,7 +185,7 @@ SpamMessageSocket::SpamMessageSocket(QString host, int port, QString channel, QS
     emotesCap_ = emotesCap;
     emotesCapValue_ = emotesCount;
     toLower_ = toLower;
-    setupTwitchEmotes();
+    emotes_ = emotes;
 }
 
 void SpamMessageSocket::sendMessage()
@@ -227,7 +229,7 @@ QString SpamMessageSocket::preProcessMessage(QString str)
     for (QStringList::iterator i = words.begin(); i != words.end(); ++i)
     {
         bool isEmote = false;
-        if (twitchEmotes.contains(*i))
+        if (emotes_->contains(*i))
         {
             countEmotes++;
             isEmote = true;
@@ -240,28 +242,6 @@ QString SpamMessageSocket::preProcessMessage(QString str)
     if (toLower_)
         result = result.toLower();
     return result.replace("http://","").replace("www","").replace("."," ").replace("/"," !!! ");
-}
-
-void SpamMessageSocket::setupTwitchEmotes()
-{
-    twitchEmotes << ":)" << ":(" << ":o" << ":z" << "B)" << ":/" << ";)" << ";p" << ":p" << "R)" << "o_O" << ":D" << ">(" << "<3";
-
-    QFile textFile("emotes.txt");
-    if(!textFile.open(QIODevice::ReadOnly))
-    {
-        qDebug("cant open emotes file");
-        return;
-    }
-
-    QTextStream textStream(&textFile);
-    while (true)
-    {
-        QString line = textStream.readLine();
-        if (line.isNull())
-            break;
-        twitchEmotes.append(line);
-    }
-    textFile.close();
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -301,7 +281,7 @@ bool SpamParams::newMessage()
 
 
 SpamSystem::SpamSystem(QString host, int port, QString channel, QList<getAccountsResult::spamAccountDescriptor> &myAccounts,
-                       QStringList &allAccounts, QStringList &bannedAccounts, QStringList &messageList, QTextEdit *out,
+                       QStringList &allAccounts, QStringList &bannedAccounts, QStringList &messageList, QTextEdit *out, QHash<QString,QString>* emotes,
                        int minWords, int maxWords, bool emotesCap, int emotesCount,
                        bool toLower, int cd, int maxMessages, int beforeAttack)
 {
@@ -316,6 +296,7 @@ SpamSystem::SpamSystem(QString host, int port, QString channel, QList<getAccount
     messageList_ = messageList;
     state = IDLE;
     grabber = 0;
+    emotes_ = emotes;
 }
 
 SpamSystem::~SpamSystem()
@@ -384,7 +365,7 @@ void SpamSystem::connectNextSocket()
 {
     SpamMessageSocket * s = new SpamMessageSocket(params._host,params._port,params._channel,
                                                   myAccounts_.at(currentConnectNumber).login,myAccounts_.at(currentConnectNumber).pass,
-                                                  &words_,params._minWords,params._maxWords,params._emotesCap,params._emotesCount,params._toLower);
+                                                  &words_,emotes_,params._minWords,params._maxWords,params._emotesCap,params._emotesCount,params._toLower);
     connect(s,SIGNAL(connectSignal()),this,SLOT(socketConnected()));
     s->connectToHost();
     spammers.append(s);

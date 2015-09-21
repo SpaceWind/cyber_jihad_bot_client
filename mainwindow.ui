@@ -108,31 +108,7 @@ QTabBar::tab:hover {
         <string>Spam Attack</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_8">
-        <item row="1" column="1">
-         <widget class="QGroupBox" name="chatbox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="title">
-           <string>Channel Chat</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
-            <widget class="ImageTextBrowser" name="channel_chat"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="0" rowspan="2">
+        <item row="1" column="0" rowspan="4">
          <widget class="QGroupBox" name="party_box">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -267,7 +243,7 @@ QTabBar::tab:hover {
           </layout>
          </widget>
         </item>
-        <item row="0" column="3" rowspan="2">
+        <item row="1" column="3" rowspan="4">
          <widget class="QGroupBox" name="accounts_box">
           <property name="minimumSize">
            <size>
@@ -344,7 +320,7 @@ QTabBar::tab:hover {
           </layout>
          </widget>
         </item>
-        <item row="0" column="2" rowspan="2">
+        <item row="1" column="2" rowspan="4">
          <widget class="QGroupBox" name="Words_box">
           <property name="maximumSize">
            <size>
@@ -362,7 +338,7 @@ QTabBar::tab:hover {
           </layout>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="4" column="1">
          <widget class="QGroupBox" name="attack_box">
           <property name="enabled">
            <bool>true</bool>
@@ -383,48 +359,6 @@ QTabBar::tab:hover {
            <string>Attack Params</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_4">
-           <item row="7" column="0" colspan="4">
-            <widget class="QProgressBar" name="progress">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="maximum">
-              <number>0</number>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-             <property name="textVisible">
-              <bool>false</bool>
-             </property>
-             <property name="format">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0" colspan="4">
-            <widget class="QLabel" name="attack_status">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>16</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>status</string>
-             </property>
-             <property name="scaledContents">
-              <bool>false</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_7">
              <property name="text">
@@ -621,6 +555,72 @@ QTabBar::tab:hover {
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QGroupBox" name="chatbox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Channel Chat</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="0" column="0">
+            <widget class="ImageTextBrowser" name="channel_chat"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="attack_status">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>16</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>status</string>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QProgressBar" name="progress">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximum">
+           <number>0</number>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="textVisible">
+           <bool>false</bool>
+          </property>
+          <property name="format">
+           <string/>
+          </property>
          </widget>
         </item>
        </layout>

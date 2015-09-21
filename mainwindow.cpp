@@ -610,6 +610,7 @@ void MainWindow::startAttack()
     logger->log(TinyLogger::DEBUG, "starting spam system");
     spamSystem = new SpamSystem(server_,port_.toInt(),ui->chat_channel->text(),
                                 myAccounts_,allAccounts_,banned,messageList,ui->channel_chat,
+                                &emotes,
                                 ui->min_words->value(),ui->max_words->value(),
                                 ui->emotes_cap_checkbox->isChecked(),ui->emotes_cap->value(),
                                 ui->tolower_checkbox->isChecked(),ui->chat_cd->value(),
